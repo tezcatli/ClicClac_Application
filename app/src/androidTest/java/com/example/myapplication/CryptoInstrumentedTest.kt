@@ -2,19 +2,15 @@ package com.example.myapplication
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import android.security.keystore.KeyProtection
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.net.URL
 import java.security.KeyStore
-import java.security.SecureRandom
 import java.time.ZonedDateTime
 import java.util.*
 import javax.crypto.Cipher
@@ -29,9 +25,10 @@ import javax.crypto.spec.SecretKeySpec
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 @RunWith(AndroidJUnit4::class)
-class ExampleInstrumentedTest {
+class CryptoInstrumentedTest {
     @Test
     fun useAppContext() = runTest {
+
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
@@ -75,6 +72,8 @@ class ExampleInstrumentedTest {
 
         assertArrayEquals(testVector, plainText)
 
+        assertEquals(true, true)
+
     }
 
     @Test
@@ -93,7 +92,11 @@ class ExampleInstrumentedTest {
             setBlockModes(KeyProperties.BLOCK_MODE_GCM)
             setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
             setRandomizedEncryptionRequired(true)
-            setKeyValidityStart(Date.from(ZonedDateTime.parse("2022-12-03T10:15:30+01:00").toInstant()))
+            setKeyValidityStart(
+                Date.from(
+                    ZonedDateTime.parse("2022-12-03T10:15:30+01:00").toInstant()
+                )
+            )
             build()
         }
 
@@ -109,11 +112,68 @@ class ExampleInstrumentedTest {
             Log.i("KEYSTORE", "Name: $alias")
             val entry = ks.getEntry(alias, null)
             for (attribute in entry.attributes) {
-                Log.i("KEYSTORE ALIAS",  "Attribute : " + attribute.name)
+                Log.i("KEYSTORE ALIAS", "Attribute : " + attribute.name)
             }
         }
 
         assertEquals(true, true)
     }
 
+    @Test
+    fun test2() = runTest {
+/*
+        val ks = KeyStore.getInstance("AndroidKeyStore")
+        ks.load(null, null)
+
+        val key1 =
+            KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore").run {
+                init(
+
+                    KeyGenParameterSpec.Builder(
+                        "testkey1",
+                        KeyProperties.PURPOSE_WRAP_KEY or KeyProperties.PURPOSE_ENCRYPT
+
+                    ).run {
+                        setBlockModes(KeyProperties.BLOCK_MODE_ECB)
+                        setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                        setRandomizedEncryptionRequired(false)
+                        build()
+                    })
+                generateKey()
+            }
+
+        val key2 =
+            KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore").run {
+                init(
+
+                    KeyGenParameterSpec.Builder(
+                        "testkey2",
+                        KeyProperties.PURPOSE_WRAP_KEY or KeyProperties.PURPOSE_ENCRYPT
+
+                    ).run {
+                        setBlockModes(KeyProperties.BLOCK_MODE_ECB)
+                        setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                        setRandomizedEncryptionRequired(false)
+                        build()
+                    })
+                generateKey()
+            }
+
+        val cipher = Cipher.getInstance("AES/ECB/NoPadding")
+        cipher.init(Cipher.WRAP_MODE, key1)
+        cipher.wrap(key2)
+
+
+        //val ciphertext: ByteArray = cipher.doFinal("Salut Les Amis ! ".toByteArray())
+
+        for (alias in ks.aliases()) {
+            Log.i("KEYSTORE", "Name: $alias")
+            val entry = ks.getEntry(alias, null)
+            for (attribute in entry.attributes) {
+                Log.i("KEYSTORE ALIAS", "Attribute : " + attribute.name)
+            }
+        }
+*/
+        assertEquals(true, true)
+    }
 }
