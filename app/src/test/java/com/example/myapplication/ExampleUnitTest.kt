@@ -1,16 +1,11 @@
 package com.example.myapplication
 
-import android.util.Log
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
 import org.junit.Assert.*
 import org.junit.Test
 import java.net.URL
 import java.time.ZonedDateTime
+import java.util.*
 
 /**
  * Example local unit test, which will execute on the development machine (host).
@@ -46,13 +41,13 @@ class ExampleUnitTest {
     fun addition_isCorrect() = runTest {
 
 
+        val uuid = UUID.randomUUID().toString()
 
 
-
-        val cipherEscrow = com.example.myapplication.CipherEscrow(this)
+        val cipherEscrow = com.example.myapplication.EscrowCipher(this)
         cipherEscrow.init(URL("http://localhost:5000/certificate"))
 
-        cipherEscrow.escrow(ZonedDateTime.parse("2023-12-03T10:15:30+01:00[Europe/Paris]"))
+        cipherEscrow.escrow(ZonedDateTime.parse("2023-12-03T10:15:30+01:00[Europe/Paris]"), uuid)
 
         assertEquals(4, 2 + 2)
     }

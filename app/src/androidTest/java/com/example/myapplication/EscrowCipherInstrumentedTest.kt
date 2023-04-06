@@ -1,10 +1,10 @@
 package com.example.myapplication
 
 import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyNotYetValidException
 import android.security.keystore.KeyProperties
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
@@ -16,7 +16,6 @@ import java.util.*
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.SecretKeySpec
 
 
 /**
@@ -25,54 +24,85 @@ import javax.crypto.spec.SecretKeySpec
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 @RunWith(AndroidJUnit4::class)
-class CryptoInstrumentedTest {
+class EscrowCipherInstrumentedTest {
     @Test
-    fun useAppContext() = runTest {
+    @kotlinx.coroutines.ExperimentalCoroutinesApi
+    fun escrowUnescrow() = runTest {
 
-        // Context of the app under test.
-        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-
-        //val ks = KeyStore.getInstance(KeyStore.getDefaultType())
-        //ks.load(null, null)
-
-        val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES)
-
-        generator.init(256)
-
-        val sKey = generator.generateKey()
-
-
-        val cipherEscrow = CipherEscrow(this)
+        val cipherEscrow = EscrowCipher(this)
         cipherEscrow.init(URL("http://10.0.2.2:5000/certificate"))
 
-        val escrow = cipherEscrow.escrow(ZonedDateTime.parse("2022-12-03T10:15:30+01:00[Europe/Paris]"))
+        val uuid = UUID.randomUUID().toString()
 
-        val sKey2 = cipherEscrow.withdraw(URL("http://10.0.2.2:5000/escrow"), listOf(escrow))
+        val escrow = cipherEscrow.escrow(ZonedDateTime.parse("2022-12-03T10:15:30+01:00[Europe/Paris]"), uuid)
 
-        //Log.i("TEST", Base64.getEncoder().encodeToString(sKey2[0].encoded))
-
-        //assertEquals(sKey, sKey2[0])
+        val sKey = cipherEscrow.withdraw(URL("http://10.0.2.2:5000/escrow"), listOf(escrow))
 
         val testVector = "Salut Les Amis".toByteArray()
 
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(sKey2[0].encoded, "AES"))
+        cipher.init(Cipher.ENCRYPT_MODE, cipherEscrow.getsKeyEnc(uuid))
         val iv = cipher.iv.copyOf()
         val cipheredText: ByteArray = cipher.doFinal(testVector)
 
 
         val spec = GCMParameterSpec(128, iv)
-        cipher.init(Cipher.DECRYPT_MODE, escrow.sKeyHandle, spec)
+        cipher.init(Cipher.DECRYPT_MODE, sKey[0], spec)
+        assertArrayEquals(testVector, cipher.doFinal(cipheredText))
 
-        val plainText: ByteArray = cipher.doFinal(cipheredText)
+        cipher.init(Cipher.DECRYPT_MODE, cipherEscrow.getsKeyDec(uuid), spec)
+        assertArrayEquals(testVector, cipher.doFinal(cipheredText))
 
-        Log.e("TEST", "Plain text: " + String(testVector))
-        Log.e("TEST", "Decrypted text: " + String(plainText))
+    }
+
+    @Test
+    @kotlinx.coroutines.ExperimentalCoroutinesApi
+    fun escrowUnescrow2() = runTest {
+
+        val cipherEscrow = EscrowCipher(this)
+        cipherEscrow.init(URL("http://10.0.2.2:5000/certificate"))
+
+        val uuid = UUID.randomUUID().toString()
+
+        val escrow = cipherEscrow.escrow(ZonedDateTime.parse("2023-12-03T10:15:30+01:00[Europe/Paris]"), uuid)
+
+        val sKey = cipherEscrow.withdraw(URL("http://10.0.2.2:5000/escrow"), listOf(escrow))
+
+        val testVector = "Salut Les Amis".toByteArray()
+
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, cipherEscrow.getsKeyEnc(uuid))
+        val iv = cipher.iv.copyOf()
+        val cipheredText: ByteArray = cipher.doFinal(testVector)
 
 
-        assertArrayEquals(testVector, plainText)
+        assertEquals(sKey[0], null)
+    }
 
-        assertEquals(true, true)
+
+    @Test(expected = KeyNotYetValidException::class)
+    @kotlinx.coroutines.ExperimentalCoroutinesApi
+    fun escrowUnescrow3() = runTest {
+
+        val cipherEscrow = EscrowCipher(this)
+        cipherEscrow.init(URL("http://10.0.2.2:5000/certificate"))
+
+        val uuid = UUID.randomUUID().toString()
+
+        val escrow = cipherEscrow.escrow(ZonedDateTime.parse("2023-12-03T10:15:30+01:00[Europe/Paris]"), uuid)
+
+        val testVector = "Salut Les Amis".toByteArray()
+
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, cipherEscrow.getsKeyEnc(uuid))
+        val iv = cipher.iv.copyOf()
+        val cipheredText: ByteArray = cipher.doFinal(testVector)
+
+
+        val spec = GCMParameterSpec(128, iv)
+
+        cipher.init(Cipher.DECRYPT_MODE, cipherEscrow.getsKeyDec(uuid), spec)
+        assertArrayEquals(testVector, cipher.doFinal(cipheredText))
 
     }
 

@@ -1,7 +1,5 @@
 package com.example.myapplication
 
-import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyProperties
 import android.util.Log
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -10,14 +8,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.net.URL
-import java.security.KeyStore
 import java.time.ZonedDateTime
 import java.util.*
-import javax.crypto.Cipher
-import javax.crypto.KeyGenerator
-import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.SecretKeySpec
 
 
 /**
@@ -26,36 +18,39 @@ import javax.crypto.spec.SecretKeySpec
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 @RunWith(AndroidJUnit4::class)
-class RoomInstrumentedTest {
+class EscrowDbInstrumentedTest {
     @Test
+    @kotlinx.coroutines.ExperimentalCoroutinesApi
     fun roomTest() = runTest {
 
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
+        appContext.deleteDatabase("database-name")
+
         val db = Room.databaseBuilder(
             appContext,
-            AppDatabase::class.java, "database-name"
+            EscrowDb::class.java, "database-name"
         ).build()
 
         val uuid = UUID.randomUUID()
 
-        db.escrowedPicturesDao().insertAll(EscrowedPicture(
-            sKeyName = uuid.toString(),
-            deadline = Date(),
+        db.escrowDbDao().insertAll(EscrowDbEntry(
+            UUID = uuid.toString(),
+            deadline = ZonedDateTime.now(),
             token = "token",
             wrappedKey = byteArrayOf(),
-            fileName = "fileName"
+    //       fileName = "fileName"
 
         ))
 
-        for (escrowedPicture in db.escrowedPicturesDao().getAll()) {
-            Log.i("ROOM",   escrowedPicture.sKeyName + " " + escrowedPicture.deadline.toString())
+        for (escrowedPicture in db.escrowDbDao().getAll()) {
+            Log.i("ROOM",   escrowedPicture.UUID + " " + escrowedPicture.deadline.toString())
         }
 
-        val escrowedPicture = db.escrowedPicturesDao().findById(uuid.toString())
+        val escrowedPicture = db.escrowDbDao().findById(uuid.toString())
 
-        Log.i("ROOM",   escrowedPicture.sKeyName + " " + escrowedPicture.deadline.toString())
+        Log.i("ROOM",   escrowedPicture.UUID + " " + escrowedPicture.deadline.toString())
 
         assertEquals(true, true)
 

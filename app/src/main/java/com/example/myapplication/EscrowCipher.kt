@@ -3,12 +3,9 @@ package com.example.myapplication
 //import android.util.Log
 //import android.os.Build
 
-import android.os.Build
-import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.security.keystore.KeyProtection
 import android.util.Log
-import androidx.annotation.RequiresApi
 import at.favre.lib.hkdf.HKDF
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,6 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -93,18 +91,14 @@ DVQo+PBC5J6QwP01pVAg4Lh+uwzkS2Zb6P1fM2fEhZ7tmVM88qq0MkYv9w==
 
 object ZonedDateTimeSerializer : KSerializer<ZonedDateTime> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("DateTime", PrimitiveKind.STRING)
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun serialize(encoder: Encoder, value: ZonedDateTime) = encoder.encodeString(value.format(ISO_OFFSET_DATE_TIME))
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun deserialize(decoder: Decoder): ZonedDateTime = ZonedDateTime.parse(decoder.decodeString())
 }
 
 
 object PublicKeySerializer : KSerializer<PublicKey> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("PublicKey", PrimitiveKind.STRING)
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun serialize(encoder: Encoder, value: PublicKey) = encoder.encodeString(Base64.getEncoder().encodeToString(value.encoded))
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun deserialize(decoder: Decoder): PublicKey {
         val byteKey: ByteArray = Base64.getDecoder().decode(decoder.decodeString())
         val publicKey = X509EncodedKeySpec(byteKey)
@@ -116,9 +110,7 @@ object PublicKeySerializer : KSerializer<PublicKey> {
 
 object SecretKeySerializer : KSerializer<SecretKey> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("SecretKey", PrimitiveKind.STRING)
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun serialize(encoder: Encoder, value: SecretKey) = encoder.encodeString(Base64.getEncoder().encodeToString(value.encoded))
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun deserialize(decoder: Decoder): SecretKey {
         val byteKey: ByteArray = Base64.getDecoder().decode(decoder.decodeString())
         return SecretKeySpec(byteKey, "AES_256")
@@ -127,9 +119,7 @@ object SecretKeySerializer : KSerializer<SecretKey> {
 
 object ByteArraySerializer : KSerializer<ByteArray> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ByteArray2", PrimitiveKind.STRING)
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun serialize(encoder: Encoder, value: ByteArray) = encoder.encodeString(Base64.getEncoder().encodeToString(value))
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun deserialize(decoder: Decoder): ByteArray {
         return Base64.getDecoder().decode(decoder.decodeString())
     }
@@ -137,9 +127,7 @@ object ByteArraySerializer : KSerializer<ByteArray> {
 
 object BigIntegerSerializer : KSerializer<BigInteger> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("BigInteger", PrimitiveKind.STRING)
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun serialize(encoder: Encoder, value: BigInteger) = encoder.encodeString(value.toString())
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun deserialize(decoder: Decoder): BigInteger {
         return BigInteger(decoder.decodeString())
     }
@@ -159,9 +147,7 @@ data class TokenContent(
 
 object KeySerializer : KSerializer<ByteArray> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("MacKey", PrimitiveKind.STRING)
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun serialize(encoder: Encoder, value: ByteArray) = encoder.encodeString(Base64.getEncoder().encodeToString(value))
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun deserialize(decoder: Decoder): ByteArray = Base64.getDecoder().decode(decoder.decodeString())
 }
 
@@ -180,8 +166,9 @@ data class TokenList(
 @Serializable
 data class WithdrawResult(
     val status : String,
+    val error: String? = null,
     @Serializable(with = KeySerializer::class)
-    val wKey: ByteArray
+    val wKey: ByteArray? = null
 )
 
 @Serializable
@@ -191,13 +178,12 @@ data class WithdrawResultList(
 )
 
 data class Escrow (
-    val token : Token,
-    val sKeyHandle : SecretKey,
+    val token : String,
     val wrappedKey: ByteArray
 )
 
 
-class CipherEscrow(private val externalScope : CoroutineScope) {
+class EscrowCipher(private val externalScope : CoroutineScope) {
 
     private lateinit var x509certificate : X509Certificate
     private lateinit var androidKS : KeyStore
@@ -233,10 +219,9 @@ class CipherEscrow(private val externalScope : CoroutineScope) {
         }.join()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    public suspend fun withdraw(url: URL, escrowList : List<Escrow>) : List<SecretKey> {
+    public suspend fun withdraw(url: URL, escrowList : List<Escrow>) : List<SecretKey?> {
 
-        lateinit var sKeyList : List<SecretKey>
+        lateinit var sKeyList : List<SecretKey?>
         externalScope.launch {
 
 
@@ -244,7 +229,7 @@ class CipherEscrow(private val externalScope : CoroutineScope) {
                 var client : OkHttpClient = OkHttpClient();
 
 
-                val tokenList = escrowList.map { it.token }
+                val tokenList = escrowList.map {Json.decodeFromString<Token>(it.token) }
 
                 var request = Request.Builder()
                     .url(url)
@@ -262,10 +247,13 @@ class CipherEscrow(private val externalScope : CoroutineScope) {
 
                 val cipher = Cipher.getInstance("AES_256/ECB/NoPadding")
 
-
                 sKeyList = result.withdrawResultList.mapIndexed() { idx, value ->
-                    cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(value.wKey, "AES"))
-                    SecretKeySpec(cipher.doFinal(escrowList[idx].wrappedKey), "AES")
+                    if (value.status == "ok") {
+                        cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(value.wKey, "AES"))
+                        SecretKeySpec(cipher.doFinal(escrowList[idx].wrappedKey), "AES")
+                    } else {
+                        null
+                    }
                 }
 
             }
@@ -274,29 +262,10 @@ class CipherEscrow(private val externalScope : CoroutineScope) {
         return sKeyList
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    public fun escrow(deadline: ZonedDateTime) : Escrow {
+    public fun escrow(deadline: ZonedDateTime, uuid : String) : Escrow {
 
-        val sKeyName =  "sKey-" + UUID.randomUUID()
+        val sKeyName = "sKey-$uuid"
 
-        /*
-        val sKey = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore").run {
-
-            init(KeyGenParameterSpec.Builder(
-                sKeyName,
-                KeyProperties.PURPOSE_DECRYPT or KeyProperties.PURPOSE_ENCRYPT
-            ).run {
-                setBlockModes(KeyProperties.BLOCK_MODE_ECB)
-                setKeySize(256)
-                setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                setRandomizedEncryptionRequired(false)
-                setKeyValidityStart(Date.from(deadline.toInstant()))
-                build()
-            })
-
-            generateKey()
-        }
-        */
 
         val sKey = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES).run {
             init(256)
@@ -363,17 +332,36 @@ class CipherEscrow(private val externalScope : CoroutineScope) {
         Log.i("TEST", "macResult = " + Json.encodeToString(macResult))
 
 
-        androidKS.setEntry(sKeyName,SecretKeyEntry(sKey),
-            KeyProtection.Builder(KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT).run {
+        androidKS.setEntry(
+            "$sKeyName-enc",SecretKeyEntry(sKey),
+            KeyProtection.Builder(KeyProperties.PURPOSE_ENCRYPT).run {
                 setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                 setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                setRandomizedEncryptionRequired(false)
-                setKeyValidityStart(Date.from(deadline.toInstant()))
+                setRandomizedEncryptionRequired(true)
                 build()
             })
 
 
+        androidKS.setEntry(
+            "$sKeyName-dec",SecretKeyEntry(sKey),
+            KeyProtection.Builder(KeyProperties.PURPOSE_DECRYPT).run {
+                setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                setRandomizedEncryptionRequired(true)
+                setKeyValidityStart(Date.from(deadline.toInstant()))
+                build()
+            })
 
-        return Escrow(macResult, (androidKS.getEntry(sKeyName, null) as SecretKeyEntry).secretKey, wrappedKey)
+        // (androidKS.getEntry("$sKeyName-enc", null) as SecretKeyEntry).secretKey
+
+        return Escrow(Json.encodeToString(macResult), wrappedKey)
+    }
+
+    public fun getsKeyEnc(uuid : String) : SecretKey {
+        return (androidKS.getEntry("sKey-$uuid-enc", null) as SecretKeyEntry).secretKey
+    }
+
+    public fun getsKeyDec(uuid : String) : SecretKey {
+        return (androidKS.getEntry("sKey-$uuid-dec", null) as SecretKeyEntry).secretKey
     }
 }
