@@ -3,14 +3,12 @@ package com.example.myapplication
 //import android.util.Log
 //import android.os.Build
 
+import android.content.Context
 import android.security.keystore.KeyProperties
 import android.security.keystore.KeyProtection
 import android.util.Log
 import at.favre.lib.hkdf.HKDF
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -27,6 +25,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import java.io.File
 import java.math.BigInteger
 import java.net.URL
 import java.nio.charset.StandardCharsets
@@ -44,26 +43,6 @@ import javax.crypto.*
 import javax.crypto.spec.SecretKeySpec
 
 
-val certificate = """
------BEGIN CERTIFICATE-----
-MIIC9zCCAlqgAwIBAgIUfpIgqEPo9nIt8KHGrS0n4KULDDgwCgYIKoZIzj0EAwIw
-gY0xCzAJBgNVBAYTAkZSMRYwFAYDVQQIDA1JbGUgRGUgRnJhbmNlMQ4wDAYDVQQH
-DAVQYXJpczEOMAwGA1UECgwFQmxvcmcxEzARBgNVBAsMClBsb3JnIFVuaXQxEjAQ
-BgNVBAMMCUJsb3JnIENFTzEdMBsGCSqGSIb3DQEJARYOYmxvcmdAYmxvcmcuZnIw
-HhcNMjMwMzIwMDczNTA1WhcNMjQwMzE5MDczNTA1WjCBjTELMAkGA1UEBhMCRlIx
-FjAUBgNVBAgMDUlsZSBEZSBGcmFuY2UxDjAMBgNVBAcMBVBhcmlzMQ4wDAYDVQQK
-DAVCbG9yZzETMBEGA1UECwwKUGxvcmcgVW5pdDESMBAGA1UEAwwJQmxvcmcgQ0VP
-MR0wGwYJKoZIhvcNAQkBFg5ibG9yZ0BibG9yZy5mcjCBmzAQBgcqhkjOPQIBBgUr
-gQQAIwOBhgAEAKl1gMB+Z8x+kX4Xc7o6+wOw0y4aItvQzc/LUYuDV6ns68LP6s+j
-Ovi/LZPqjGGkWmvVP47MYg1QhyPxbGQC4PMrAFVUxA8iEOEImxpe6guVenGEZesb
-uP0a2vawSA3tUzHjSB0Q4DWfEyuOtMQX8rhNeg4oUW3dWkfxttRU+J61rYNuo1Mw
-UTAdBgNVHQ4EFgQUJ2d5BNtxF5jJGt1OmvR/mr+vviYwHwYDVR0jBBgwFoAUJ2d5
-BNtxF5jJGt1OmvR/mr+vviYwDwYDVR0TAQH/BAUwAwEB/zAKBggqhkjOPQQDAgOB
-igAwgYYCQRU2/3/6LtZvFI86x9Rvkuu7GbcCxGwkOyV6nO6cY3i/KdmX3l8DAYE+
-a1Ydexdod5mSAQsCXRXnWLsmY6MZOkP7AkE+zYs2EDE0c6+7OiMvVRpDlL3iWD/e
-DVQo+PBC5J6QwP01pVAg4Lh+uwzkS2Zb6P1fM2fEhZ7tmVM88qq0MkYv9w==
------END CERTIFICATE-----
-""".trimIndent()
 
 /*
 
@@ -90,15 +69,24 @@ DVQo+PBC5J6QwP01pVAg4Lh+uwzkS2Zb6P1fM2fEhZ7tmVM88qq0MkYv9w==
  */
 
 object ZonedDateTimeSerializer : KSerializer<ZonedDateTime> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("DateTime", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: ZonedDateTime) = encoder.encodeString(value.format(ISO_OFFSET_DATE_TIME))
-    override fun deserialize(decoder: Decoder): ZonedDateTime = ZonedDateTime.parse(decoder.decodeString())
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("DateTime", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: ZonedDateTime) =
+        encoder.encodeString(value.format(ISO_OFFSET_DATE_TIME))
+
+    override fun deserialize(decoder: Decoder): ZonedDateTime =
+        ZonedDateTime.parse(decoder.decodeString())
 }
 
 
 object PublicKeySerializer : KSerializer<PublicKey> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("PublicKey", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: PublicKey) = encoder.encodeString(Base64.getEncoder().encodeToString(value.encoded))
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("PublicKey", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: PublicKey) =
+        encoder.encodeString(Base64.getEncoder().encodeToString(value.encoded))
+
     override fun deserialize(decoder: Decoder): PublicKey {
         val byteKey: ByteArray = Base64.getDecoder().decode(decoder.decodeString())
         val publicKey = X509EncodedKeySpec(byteKey)
@@ -109,8 +97,12 @@ object PublicKeySerializer : KSerializer<PublicKey> {
 
 
 object SecretKeySerializer : KSerializer<SecretKey> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("SecretKey", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: SecretKey) = encoder.encodeString(Base64.getEncoder().encodeToString(value.encoded))
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("SecretKey", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: SecretKey) =
+        encoder.encodeString(Base64.getEncoder().encodeToString(value.encoded))
+
     override fun deserialize(decoder: Decoder): SecretKey {
         val byteKey: ByteArray = Base64.getDecoder().decode(decoder.decodeString())
         return SecretKeySpec(byteKey, "AES_256")
@@ -118,16 +110,24 @@ object SecretKeySerializer : KSerializer<SecretKey> {
 }
 
 object ByteArraySerializer : KSerializer<ByteArray> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ByteArray2", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: ByteArray) = encoder.encodeString(Base64.getEncoder().encodeToString(value))
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("ByteArray2", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: ByteArray) =
+        encoder.encodeString(Base64.getEncoder().encodeToString(value))
+
     override fun deserialize(decoder: Decoder): ByteArray {
         return Base64.getDecoder().decode(decoder.decodeString())
     }
 }
 
 object BigIntegerSerializer : KSerializer<BigInteger> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("BigInteger", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: BigInteger) = encoder.encodeString(value.toString())
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("BigInteger", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: BigInteger) =
+        encoder.encodeString(value.toString())
+
     override fun deserialize(decoder: Decoder): BigInteger {
         return BigInteger(decoder.decodeString())
     }
@@ -136,36 +136,41 @@ object BigIntegerSerializer : KSerializer<BigInteger> {
 @Serializable
 data class TokenContent(
     @Serializable(with = ZonedDateTimeSerializer::class)
-    val deadline : ZonedDateTime,
+    val deadline: ZonedDateTime,
     @Serializable(with = ByteArraySerializer::class)
-    val signature : ByteArray,
+    val signature: ByteArray,
     @Serializable(with = PublicKeySerializer::class)
     val escrow: PublicKey,
     //@Serializable(with = ByteArraySerializer::class)
     //val escrow2: ByteArray
-    )
+)
 
 object KeySerializer : KSerializer<ByteArray> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("MacKey", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: ByteArray) = encoder.encodeString(Base64.getEncoder().encodeToString(value))
-    override fun deserialize(decoder: Decoder): ByteArray = Base64.getDecoder().decode(decoder.decodeString())
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("MacKey", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: ByteArray) =
+        encoder.encodeString(Base64.getEncoder().encodeToString(value))
+
+    override fun deserialize(decoder: Decoder): ByteArray =
+        Base64.getDecoder().decode(decoder.decodeString())
 }
 
 // @Serializable(with = MacKeySerializer::class)
 @Serializable
 data class Token(
     @Serializable(with = KeySerializer::class)
-    val mac : ByteArray,
-    val escrowJson : String
+    val mac: ByteArray,
+    val escrowJson: String
 )
 
 data class TokenList(
-    val tokenList : List<Token>
+    val tokenList: List<Token>
 )
 
 @Serializable
 data class WithdrawResult(
-    val status : String,
+    val status: String,
     val error: String? = null,
     @Serializable(with = KeySerializer::class)
     val wKey: ByteArray? = null
@@ -177,68 +182,109 @@ data class WithdrawResultList(
     val withdrawResultList: List<WithdrawResult>
 )
 
-data class Escrow (
-    val token : String,
+data class Escrow(
+    val token: String,
     val wrappedKey: ByteArray
 )
 
 
-class EscrowCipher(private val externalScope : CoroutineScope) {
+class EscrowCipher(private val externalScope: CoroutineScope) {
 
-    private lateinit var x509certificate : X509Certificate
-    private lateinit var androidKS : KeyStore
+    private lateinit var x509certificate: X509Certificate
+    private lateinit var androidKS: KeyStore
+    private lateinit var webApiUrl: URL
+    private lateinit var context: Context
+    private val CERTIFICATE_FILE = "certificate.pem"
+    private val WEB_API_CERTIFICATE = "certificate"
+    private val WEB_API_ESCROW = "escrow"
 
-    public suspend fun init(url: URL) {
+
+    suspend fun init(context: Context, url: URL) {
         androidKS = KeyStore.getInstance("AndroidKeyStore")
         androidKS.load(null, null)
+        webApiUrl = url
+        this.context = context
 
-        Log.e("TEST2", url.toString())
-        externalScope.launch {
-            var client : OkHttpClient = OkHttpClient();
+        val cf: CertificateFactory = CertificateFactory.getInstance("X.509")
 
-
-            var request = Request.Builder()
-                .url(url)
-                .build();
-
-            withContext(Dispatchers.IO) {
-
-                Log.e("TEST2", url.toString())
-                var response: Response = client.newCall(request).execute()
-                //Log.e("HTTP2", response.body!!.string())
-
-                if (!response.isSuccessful)
-                    throw Exception("Error")
-
-                val cf: CertificateFactory = CertificateFactory.getInstance("X.509")
-
-                x509certificate = cf.generateCertificate(response.body!!.byteStream()) as X509Certificate
-
-                //x509certificate.serialNumber
+        try {
+            supervisorScope {
+                updateCertificate()
             }
+        } catch (e: Exception) {
+            val certificate = File(context.filesDir, CERTIFICATE_FILE).readText()
+            x509certificate =
+                cf.generateCertificate(certificate.byteInputStream()) as X509Certificate
+        }
+
+    }
+
+
+    suspend fun updateCertificate() {
+        externalScope.launch(Dispatchers.IO) {
+            val client = OkHttpClient()
+
+
+            val request = Request.Builder()
+                .url("$webApiUrl/$WEB_API_CERTIFICATE")
+                .build()
+
+            val x509Initialized = ::x509certificate.isInitialized
+
+            //withContext(Dispatchers.IO) {
+            //launch {
+
+            Log.e("TEST2", "$webApiUrl/$WEB_API_CERTIFICATE")
+            val response: Response = client.newCall(request).execute()
+            //Log.e("HTTP2", response.body!!.string())
+
+            if (!response.isSuccessful)
+                throw Exception("Error")
+
+            val cf: CertificateFactory = CertificateFactory.getInstance("X.509")
+
+            val body = response.body!!.string().trimIndent()
+            //Log.e("TEST-----", body.string())
+
+            val certificate = cf.generateCertificate(body.byteInputStream()) as X509Certificate
+
+            if (!x509Initialized) {
+                File(context.filesDir, CERTIFICATE_FILE).writeText(body)
+                x509certificate = certificate
+            } else {
+                if (!certificate.signature.contentEquals(x509certificate.signature)) {
+                    File(context.filesDir, CERTIFICATE_FILE).writeText(body)
+                    x509certificate = certificate
+                }
+            }
+            //}
+            //}
         }.join()
     }
 
-    public suspend fun withdraw(url: URL, escrowList : List<Escrow>) : List<SecretKey?> {
+    suspend fun withdraw(escrowList: List<Escrow>): List<SecretKey?> {
 
-        lateinit var sKeyList : List<SecretKey?>
+        lateinit var sKeyList: List<SecretKey?>
         externalScope.launch {
 
 
             withContext(Dispatchers.IO) {
-                var client : OkHttpClient = OkHttpClient();
+                val client = OkHttpClient()
 
 
-                val tokenList = escrowList.map {Json.decodeFromString<Token>(it.token) }
+                val tokenList = escrowList.map { Json.decodeFromString<Token>(it.token) }
 
-                var request = Request.Builder()
-                    .url(url)
-                    .post(Json.encodeToString(tokenList).toRequestBody("application/json; charset=utf-8".toMediaType()))
-                    .build();
+                val request = Request.Builder()
+                    .url("$webApiUrl/$WEB_API_ESCROW")
+                    .post(
+                        Json.encodeToString(tokenList)
+                            .toRequestBody("application/json; charset=utf-8".toMediaType())
+                    )
+                    .build()
 
                 Log.e("TEST2---->", Json.encodeToString(tokenList))
 
-                var response: Response = client.newCall(request).execute()
+                val response: Response = client.newCall(request).execute()
 
                 if (!response.isSuccessful)
                     throw Exception("Error")
@@ -262,7 +308,7 @@ class EscrowCipher(private val externalScope : CoroutineScope) {
         return sKeyList
     }
 
-    public fun escrow(deadline: ZonedDateTime, uuid : String) : Escrow {
+    fun escrow(deadline: ZonedDateTime, uuid: String): Escrow {
 
         val sKeyName = "sKey-$uuid"
 
@@ -283,7 +329,7 @@ class EscrowCipher(private val externalScope : CoroutineScope) {
 
         val kpg: KeyPairGenerator = KeyPairGenerator.getInstance("EC")
 
-        kpg.initialize(params.getParameterSpec(ECGenParameterSpec::class.java));
+        kpg.initialize(params.getParameterSpec(ECGenParameterSpec::class.java))
 
         val kp: KeyPair = kpg.genKeyPair()
 
@@ -293,39 +339,45 @@ class EscrowCipher(private val externalScope : CoroutineScope) {
         ecdh.doPhase(pubKey, true)
 
         val sharedKey = ecdh.generateSecret()!!
-        Log.i("TEST", "Shared Key: "+ BigInteger(1, sharedKey).toString(16)
-            .uppercase(Locale.getDefault()))
+        Log.i(
+            "TEST", "Shared Key: " + BigInteger(1, sharedKey).toString(16)
+                .uppercase(Locale.getDefault())
+        )
 
         var hkdf = HKDF.fromHmacSha256()
 
         var pseudoRandomKey = hkdf.extract(null as ByteArray?, sharedKey)
 
-        var macKey = hkdf.expand(pseudoRandomKey, "mac-key".toByteArray(StandardCharsets.UTF_8), 32)
+        val macKey = hkdf.expand(pseudoRandomKey, "mac-key".toByteArray(StandardCharsets.UTF_8), 32)
 
 
         hkdf = HKDF.fromHmacSha256()
 
         pseudoRandomKey = hkdf.extract(null as ByteArray?, sharedKey)
 
-        val wrapKey = hkdf.expand(pseudoRandomKey, "wrap-key".toByteArray(StandardCharsets.UTF_8), 32)
+        val wrapKey =
+            hkdf.expand(pseudoRandomKey, "wrap-key".toByteArray(StandardCharsets.UTF_8), 32)
 
 
         val cipher = Cipher.getInstance("AES_256/ECB/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(wrapKey, "AES"))
 
-        Log.i("TEST","Wrap Key: " + Base64.getEncoder().encodeToString(wrapKey))
+        Log.i("TEST", "Wrap Key: " + Base64.getEncoder().encodeToString(wrapKey))
 
         val wrappedKey: ByteArray = cipher.doFinal(sKey.encoded)
 
-        val tokenContentValue = Json.encodeToString(TokenContent(deadline, x509certificate.signature, kp.public))
+        val tokenContentValue =
+            Json.encodeToString(TokenContent(deadline, x509certificate.signature, kp.public))
 
         val mac: Mac = Mac.getInstance("HmacSHA256")
         mac.init(SecretKeySpec(macKey, "HmacSHA256"))
 
         mac.update(tokenContentValue.toByteArray())
 
-        Log.i("TEST", "Bytes to mac: " + BigInteger(1, tokenContentValue.toByteArray()).toString(16)
-            .uppercase(Locale.getDefault()))
+        Log.i(
+            "TEST", "Bytes to mac: " + BigInteger(1, tokenContentValue.toByteArray()).toString(16)
+                .uppercase(Locale.getDefault())
+        )
 
         val macResult = Token(mac.doFinal(), tokenContentValue)
 
@@ -333,7 +385,7 @@ class EscrowCipher(private val externalScope : CoroutineScope) {
 
 
         androidKS.setEntry(
-            "$sKeyName-enc",SecretKeyEntry(sKey),
+            "$sKeyName-enc", SecretKeyEntry(sKey),
             KeyProtection.Builder(KeyProperties.PURPOSE_ENCRYPT).run {
                 setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                 setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
@@ -343,7 +395,7 @@ class EscrowCipher(private val externalScope : CoroutineScope) {
 
 
         androidKS.setEntry(
-            "$sKeyName-dec",SecretKeyEntry(sKey),
+            "$sKeyName-dec", SecretKeyEntry(sKey),
             KeyProtection.Builder(KeyProperties.PURPOSE_DECRYPT).run {
                 setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                 setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
@@ -357,11 +409,27 @@ class EscrowCipher(private val externalScope : CoroutineScope) {
         return Escrow(Json.encodeToString(macResult), wrappedKey)
     }
 
-    public fun getsKeyEnc(uuid : String) : SecretKey {
+    fun getsKeyEnc(uuid: String): SecretKey {
         return (androidKS.getEntry("sKey-$uuid-enc", null) as SecretKeyEntry).secretKey
     }
 
-    public fun getsKeyDec(uuid : String) : SecretKey {
+    fun getsKeyDec(uuid: String): SecretKey {
         return (androidKS.getEntry("sKey-$uuid-dec", null) as SecretKeyEntry).secretKey
+    }
+
+    fun cleanUp(uuidList: List<String>) {
+        for (alias in androidKS.aliases()) {
+            if (alias.startsWith("sKey-")) {
+                val uuid = alias.removePrefix("sKey-").removeSuffix("-enc").removeSuffix("-dec")
+                if (!uuidList.contains(uuid)) {
+                    try {
+                        androidKS.deleteEntry("sKey-$uuid-enc")
+                        androidKS.deleteEntry("sKey-$uuid-dec")
+                    } catch (e: Exception) {
+                        Log.e("ESCROW", "Unable to clean up $uuid key")
+                    }
+                }
+            }
+        }
     }
 }

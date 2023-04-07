@@ -5,6 +5,7 @@ import android.security.keystore.KeyNotYetValidException
 import android.security.keystore.KeyProperties
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
@@ -28,15 +29,16 @@ class EscrowCipherInstrumentedTest {
     @Test
     @kotlinx.coroutines.ExperimentalCoroutinesApi
     fun escrowUnescrow() = runTest {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
         val cipherEscrow = EscrowCipher(this)
-        cipherEscrow.init(URL("http://10.0.2.2:5000/certificate"))
+        cipherEscrow.init(appContext, URL("http://10.0.2.2:5000"))
 
         val uuid = UUID.randomUUID().toString()
 
         val escrow = cipherEscrow.escrow(ZonedDateTime.parse("2022-12-03T10:15:30+01:00[Europe/Paris]"), uuid)
 
-        val sKey = cipherEscrow.withdraw(URL("http://10.0.2.2:5000/escrow"), listOf(escrow))
+        val sKey = cipherEscrow.withdraw(listOf(escrow))
 
         val testVector = "Salut Les Amis".toByteArray()
 
@@ -58,23 +60,20 @@ class EscrowCipherInstrumentedTest {
     @Test
     @kotlinx.coroutines.ExperimentalCoroutinesApi
     fun escrowUnescrow2() = runTest {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
         val cipherEscrow = EscrowCipher(this)
-        cipherEscrow.init(URL("http://10.0.2.2:5000/certificate"))
+        cipherEscrow.init(appContext, URL("http://10.0.2.2:5000"))
 
         val uuid = UUID.randomUUID().toString()
 
         val escrow = cipherEscrow.escrow(ZonedDateTime.parse("2023-12-03T10:15:30+01:00[Europe/Paris]"), uuid)
 
-        val sKey = cipherEscrow.withdraw(URL("http://10.0.2.2:5000/escrow"), listOf(escrow))
+        val sKey = cipherEscrow.withdraw(listOf(escrow))
 
-        val testVector = "Salut Les Amis".toByteArray()
 
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, cipherEscrow.getsKeyEnc(uuid))
-        val iv = cipher.iv.copyOf()
-        val cipheredText: ByteArray = cipher.doFinal(testVector)
-
 
         assertEquals(sKey[0], null)
     }
@@ -83,13 +82,12 @@ class EscrowCipherInstrumentedTest {
     @Test(expected = KeyNotYetValidException::class)
     @kotlinx.coroutines.ExperimentalCoroutinesApi
     fun escrowUnescrow3() = runTest {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
         val cipherEscrow = EscrowCipher(this)
-        cipherEscrow.init(URL("http://10.0.2.2:5000/certificate"))
+        cipherEscrow.init(appContext, URL("http://10.0.2.2:5000"))
 
         val uuid = UUID.randomUUID().toString()
-
-        val escrow = cipherEscrow.escrow(ZonedDateTime.parse("2023-12-03T10:15:30+01:00[Europe/Paris]"), uuid)
 
         val testVector = "Salut Les Amis".toByteArray()
 
@@ -97,7 +95,6 @@ class EscrowCipherInstrumentedTest {
         cipher.init(Cipher.ENCRYPT_MODE, cipherEscrow.getsKeyEnc(uuid))
         val iv = cipher.iv.copyOf()
         val cipheredText: ByteArray = cipher.doFinal(testVector)
-
 
         val spec = GCMParameterSpec(128, iv)
 
@@ -112,9 +109,9 @@ class EscrowCipherInstrumentedTest {
         val ks = KeyStore.getInstance("AndroidKeyStore")
         ks.load(null, null)
 
-        var generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+        val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
 
-        var parameterSpec: KeyGenParameterSpec = KeyGenParameterSpec.Builder(
+        val parameterSpec: KeyGenParameterSpec = KeyGenParameterSpec.Builder(
             "wKey",
             KeyProperties.PURPOSE_WRAP_KEY or KeyProperties.PURPOSE_ENCRYPT
 
@@ -135,8 +132,6 @@ class EscrowCipherInstrumentedTest {
 
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, wKey)
-
-        val ciphertext: ByteArray = cipher.doFinal("Salut Les Amis ! ".toByteArray())
 
         for (alias in ks.aliases()) {
             Log.i("KEYSTORE", "Name: $alias")

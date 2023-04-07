@@ -17,14 +17,14 @@ class EscrowManager(private val appContext : Context, private val externalScope:
     ).build()
 
     suspend fun init() {
-        cipherEscrow.init(URL("http://10.0.2.2:5000/certificate"))
+        cipherEscrow.init(appContext, URL("http://10.0.2.2:5000/certificate"))
     }
 
     fun add(dateTime : ZonedDateTime) : SecretKey {
         val uuid = UUID.randomUUID().toString()
         cipherEscrow.escrow(dateTime, uuid)
 
-        val escrow = cipherEscrow.escrow(ZonedDateTime.parse("2022-12-03T10:15:30+01:00[Europe/Paris]"), uuid)
+        val escrow = cipherEscrow.escrow(dateTime, uuid)
 
         databaseEscrow.escrowDbDao().insertAll(EscrowDbEntry(uuid, dateTime, escrow.token, escrow.wrappedKey))
 
