@@ -3,6 +3,9 @@ package com.example.myapplication
 import android.content.Context
 import androidx.room.Room
 import kotlinx.coroutines.CoroutineScope
+import java.io.File
+import java.io.InputStream
+import java.io.OutputStream
 import java.net.URL
 import java.time.ZonedDateTime
 import java.util.*
@@ -16,11 +19,11 @@ class EscrowManager(private val appContext : Context, private val externalScope:
         EscrowDb::class.java, "database-name"
     ).build()
 
-    suspend fun init() {
-        cipherEscrow.init(appContext, URL("http://10.0.2.2:5000/certificate"))
+    suspend fun init(url: URL) {
+        cipherEscrow.init(appContext, url)
     }
 
-    fun add(dateTime : ZonedDateTime) : SecretKey {
+    fun add(dateTime : ZonedDateTime) : String {
         val uuid = UUID.randomUUID().toString()
         cipherEscrow.escrow(dateTime, uuid)
 
@@ -28,7 +31,18 @@ class EscrowManager(private val appContext : Context, private val externalScope:
 
         databaseEscrow.escrowDbDao().insertAll(EscrowDbEntry(uuid, dateTime, escrow.token, escrow.wrappedKey))
 
-        return cipherEscrow.getsKeyEnc(uuid)
+        return uuid
+    }
+
+
+    fun setupInputStream(filename : String, uuid: String) : InputStream {
+        val file = File(appContext.filesDir, filename)
+        return cipherEscrow.setupInputStream(file.inputStream(), uuid)
+    }
+
+    fun setupOutputStream(filename : String, uuid: String) : OutputStream {
+        val file = File(appContext.filesDir, filename)
+        return cipherEscrow.setupOutputStream(file.outputStream(), uuid)
     }
 
     fun listExpired(): List<EscrowDbEntry> {

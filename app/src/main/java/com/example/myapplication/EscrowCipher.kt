@@ -26,6 +26,8 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.File
+import java.io.InputStream
+import java.io.OutputStream
 import java.math.BigInteger
 import java.net.URL
 import java.nio.charset.StandardCharsets
@@ -36,12 +38,13 @@ import java.security.cert.X509Certificate
 import java.security.interfaces.ECKey
 import java.security.spec.ECGenParameterSpec
 import java.security.spec.X509EncodedKeySpec
+import java.time.Duration
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME
 import java.util.*
 import javax.crypto.*
+import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
-
 
 
 /*
@@ -207,59 +210,63 @@ class EscrowCipher(private val externalScope: CoroutineScope) {
 
         val cf: CertificateFactory = CertificateFactory.getInstance("X.509")
 
-        try {
-            supervisorScope {
-                updateCertificate()
+
+        supervisorScope {
+//                withContext(Dispatchers.IO)
+            val deferred = async(Dispatchers.IO) { updateCertificate() }
+
+            try {
+                deferred.await()
+            } catch (e: java.lang.Exception) {
+                Log.e("EXCEPTION", e.toString())
+                val certificate = File(context.filesDir, CERTIFICATE_FILE).readText()
+                x509certificate =
+                    cf.generateCertificate(certificate.byteInputStream()) as X509Certificate
             }
-        } catch (e: Exception) {
-            val certificate = File(context.filesDir, CERTIFICATE_FILE).readText()
-            x509certificate =
-                cf.generateCertificate(certificate.byteInputStream()) as X509Certificate
         }
 
     }
 
 
     suspend fun updateCertificate() {
-        externalScope.launch(Dispatchers.IO) {
-            val client = OkHttpClient()
 
+        val client = OkHttpClient.Builder().connectTimeout(Duration.ofMillis(1000)).build()
 
-            val request = Request.Builder()
-                .url("$webApiUrl/$WEB_API_CERTIFICATE")
-                .build()
+        val request = Request.Builder()
+            .url("$webApiUrl/$WEB_API_CERTIFICATE")
+            .build()
 
-            val x509Initialized = ::x509certificate.isInitialized
+        val x509Initialized = ::x509certificate.isInitialized
 
-            //withContext(Dispatchers.IO) {
-            //launch {
+        //withContext(Dispatchers.IO) {
+        //launch {
 
-            Log.e("TEST2", "$webApiUrl/$WEB_API_CERTIFICATE")
-            val response: Response = client.newCall(request).execute()
-            //Log.e("HTTP2", response.body!!.string())
+        Log.e("TEST2", "$webApiUrl/$WEB_API_CERTIFICATE")
+        //client.connectTimeoutMillis = 10
+        val response: Response = client.newCall(request).execute()
+        //Log.e("HTTP2", response.body!!.string())
 
-            if (!response.isSuccessful)
-                throw Exception("Error")
+        if (!response.isSuccessful)
+            throw Exception("Error")
 
-            val cf: CertificateFactory = CertificateFactory.getInstance("X.509")
+        val cf: CertificateFactory = CertificateFactory.getInstance("X.509")
 
-            val body = response.body!!.string().trimIndent()
-            //Log.e("TEST-----", body.string())
+        val body = response.body!!.string().trimIndent()
+        //Log.e("TEST-----", body.string())
 
-            val certificate = cf.generateCertificate(body.byteInputStream()) as X509Certificate
+        val certificate = cf.generateCertificate(body.byteInputStream()) as X509Certificate
 
-            if (!x509Initialized) {
+        if (!x509Initialized) {
+            File(context.filesDir, CERTIFICATE_FILE).writeText(body)
+            x509certificate = certificate
+        } else {
+            if (!certificate.signature.contentEquals(x509certificate.signature)) {
                 File(context.filesDir, CERTIFICATE_FILE).writeText(body)
                 x509certificate = certificate
-            } else {
-                if (!certificate.signature.contentEquals(x509certificate.signature)) {
-                    File(context.filesDir, CERTIFICATE_FILE).writeText(body)
-                    x509certificate = certificate
-                }
             }
-            //}
-            //}
-        }.join()
+        }
+        //}
+        //}
     }
 
     suspend fun withdraw(escrowList: List<Escrow>): List<SecretKey?> {
@@ -415,6 +422,30 @@ class EscrowCipher(private val externalScope: CoroutineScope) {
 
     fun getsKeyDec(uuid: String): SecretKey {
         return (androidKS.getEntry("sKey-$uuid-dec", null) as SecretKeyEntry).secretKey
+    }
+
+    fun setupOutputStream(os: OutputStream, uuid : String) : OutputStream {
+
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, getsKeyEnc(uuid))
+        val iv = cipher.iv.copyOf()
+        os.write(byteArrayOf(iv.size.toByte()))
+        os.write(iv)
+
+        return CipherOutputStream(os, cipher)
+    }
+
+    fun setupInputStream(os: InputStream, uuid : String) : InputStream {
+        var ivSize = ByteArray(1)
+        os.read(ivSize)
+        var iv = ByteArray(ivSize[0].toInt())
+        os.read(iv)
+
+        val spec = GCMParameterSpec(128, iv)
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+
+        cipher.init(Cipher.DECRYPT_MODE, getsKeyDec(uuid), spec)
+        return CipherInputStream(os, cipher)
     }
 
     fun cleanUp(uuidList: List<String>) {

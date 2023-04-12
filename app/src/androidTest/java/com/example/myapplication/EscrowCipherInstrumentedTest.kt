@@ -23,6 +23,8 @@ import javax.crypto.spec.GCMParameterSpec
  * Instrumented test, which will execute on an Android device.
  *
  * See [testing documentation](http://d.android.com/tools/testing).
+ *
+ * Test the following sequence :  generate escrow key,  recover it from remote and local.
  */
 @RunWith(AndroidJUnit4::class)
 class EscrowCipherInstrumentedTest {
@@ -59,7 +61,7 @@ class EscrowCipherInstrumentedTest {
 
     @Test
     @kotlinx.coroutines.ExperimentalCoroutinesApi
-    fun escrowUnescrow2() = runTest {
+    fun escrowUnescrowUnexpiredKeyRemote() = runTest {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
         val cipherEscrow = EscrowCipher(this)
@@ -81,7 +83,7 @@ class EscrowCipherInstrumentedTest {
 
     @Test(expected = KeyNotYetValidException::class)
     @kotlinx.coroutines.ExperimentalCoroutinesApi
-    fun escrowUnescrow3() = runTest {
+    fun escrowUnescrowUnexpiredKeyLocal() = runTest {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
         val cipherEscrow = EscrowCipher(this)
@@ -90,6 +92,8 @@ class EscrowCipherInstrumentedTest {
         val uuid = UUID.randomUUID().toString()
 
         val testVector = "Salut Les Amis".toByteArray()
+
+        val escrow = cipherEscrow.escrow(ZonedDateTime.parse("2023-12-03T10:15:30+01:00[Europe/Paris]"), uuid)
 
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, cipherEscrow.getsKeyEnc(uuid))
