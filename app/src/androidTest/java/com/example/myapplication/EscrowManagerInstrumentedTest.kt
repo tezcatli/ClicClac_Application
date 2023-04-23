@@ -7,12 +7,9 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 import java.net.URL
 import java.time.ZonedDateTime
 import java.util.*
-import javax.crypto.Cipher
-import javax.crypto.spec.GCMParameterSpec
 
 @RunWith(AndroidJUnit4::class)
 class EscrowManagerInstrumentedTest {
@@ -24,24 +21,28 @@ class EscrowManagerInstrumentedTest {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
-        val escrowManager = EscrowManager(appContext, this)
+        val escrowManager = EscrowManager(appContext)
 
         escrowManager.init(URL("http://10.0.2.2:5000"))
 
         val uuid = escrowManager.add(ZonedDateTime.parse("2022-12-03T10:15:30+01:00[Europe/Paris]"))
 
         val testVector = "Salut Les Amis, comment allez vous ??? Moi Très bien".toByteArray()
+        val encryptedFileName = "Encrypted File Name"
+
+        //val ostream = escrowManager.setupOutputStream("testFile", uuid)
 
 
-        val ostream = escrowManager.setupOutputStream("testFile", uuid)
-        ostream.write(testVector)
-        ostream.close()
+        val ostream = escrowManager.EOutputStream("testFile", uuid,encryptedFileName)
+        ostream.outputStream.write(testVector)
+        ostream.outputStream.close()
 
-        val istream = escrowManager.setupInputStream("testFile", uuid)
-        val compareVector = istream.readBytes()
-        istream.close()
+        val istream = escrowManager.EInputStream("testFile", uuid)
+
+        val compareVector = istream.inputStream.readBytes()
+        istream.inputStream.close()
 
         Assert.assertArrayEquals(testVector, compareVector)
-
+        Assert.assertEquals(encryptedFileName, istream.streamName)
     }
 }

@@ -6,6 +6,8 @@ import androidx.room.*
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.RoomDatabase
+import androidx.room.TypeConverter
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
@@ -18,7 +20,7 @@ class Converters {
     }
 
     @TypeConverter
-    fun dateToTimestamp(date: ZonedDateTime): Long? {
+    fun dateToTimestamp(date: ZonedDateTime): Long {
         return date.toEpochSecond()
     }
 }
@@ -43,8 +45,15 @@ interface EscrowDbDao {
     @Query("SELECT * FROM EscrowDbEntry WHERE uuid = (:uuid)")
     fun findById(uuid: String): EscrowDbEntry
 
-    @Query("SELECT * FROM EscrowDbEntry WHERE deadline > (:deadline)")
+    @Query("DELETE FROM EscrowDbEntry WHERE uuid = (:uuid)")
+    fun deleteById(uuid: String)
+
+    @Query("SELECT * FROM EscrowDbEntry WHERE deadline >= (:deadline)")
     fun findExpired(deadline: ZonedDateTime): List<EscrowDbEntry>
+
+    @Query("SELECT * FROM EscrowDbEntry WHERE deadline < (:deadline)")
+    fun findPending(deadline: ZonedDateTime): List<EscrowDbEntry>
+
     @Insert
     fun insertAll(vararg users: EscrowDbEntry)
 }
@@ -55,5 +64,3 @@ interface EscrowDbDao {
 abstract class EscrowDb : RoomDatabase() {
     abstract fun escrowDbDao(): EscrowDbDao
 }
-
-

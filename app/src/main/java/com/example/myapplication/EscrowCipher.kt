@@ -9,6 +9,7 @@ import android.security.keystore.KeyProtection
 import android.util.Log
 import at.favre.lib.hkdf.HKDF
 import kotlinx.coroutines.*
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -25,9 +26,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
-import java.io.File
-import java.io.InputStream
-import java.io.OutputStream
+import java.io.*
 import java.math.BigInteger
 import java.net.URL
 import java.nio.charset.StandardCharsets
@@ -191,22 +190,20 @@ data class Escrow(
 )
 
 
-class EscrowCipher(private val externalScope: CoroutineScope) {
+class EscrowCipher(val context : Context) {
 
     private lateinit var x509certificate: X509Certificate
     private lateinit var androidKS: KeyStore
     private lateinit var webApiUrl: URL
-    private lateinit var context: Context
     private val CERTIFICATE_FILE = "certificate.pem"
     private val WEB_API_CERTIFICATE = "certificate"
     private val WEB_API_ESCROW = "escrow"
 
 
-    suspend fun init(context: Context, url: URL) {
+    suspend fun init(url: URL) {
         androidKS = KeyStore.getInstance("AndroidKeyStore")
         androidKS.load(null, null)
         webApiUrl = url
-        this.context = context
 
         val cf: CertificateFactory = CertificateFactory.getInstance("X.509")
 
@@ -228,7 +225,7 @@ class EscrowCipher(private val externalScope: CoroutineScope) {
     }
 
 
-    suspend fun updateCertificate() {
+    fun updateCertificate() {
 
         val client = OkHttpClient.Builder().connectTimeout(Duration.ofMillis(1000)).build()
 
@@ -238,13 +235,10 @@ class EscrowCipher(private val externalScope: CoroutineScope) {
 
         val x509Initialized = ::x509certificate.isInitialized
 
-        //withContext(Dispatchers.IO) {
-        //launch {
 
         Log.e("TEST2", "$webApiUrl/$WEB_API_CERTIFICATE")
-        //client.connectTimeoutMillis = 10
+
         val response: Response = client.newCall(request).execute()
-        //Log.e("HTTP2", response.body!!.string())
 
         if (!response.isSuccessful)
             throw Exception("Error")
@@ -265,14 +259,13 @@ class EscrowCipher(private val externalScope: CoroutineScope) {
                 x509certificate = certificate
             }
         }
-        //}
-        //}
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     suspend fun withdraw(escrowList: List<Escrow>): List<SecretKey?> {
 
         lateinit var sKeyList: List<SecretKey?>
-        externalScope.launch {
+        //coroutineScope.launch {
 
 
             withContext(Dispatchers.IO) {
@@ -310,7 +303,7 @@ class EscrowCipher(private val externalScope: CoroutineScope) {
                 }
 
             }
-        }.join()
+        //}.join()
 
         return sKeyList
     }
@@ -436,9 +429,9 @@ class EscrowCipher(private val externalScope: CoroutineScope) {
     }
 
     fun setupInputStream(os: InputStream, uuid : String) : InputStream {
-        var ivSize = ByteArray(1)
+        val ivSize = ByteArray(1)
         os.read(ivSize)
-        var iv = ByteArray(ivSize[0].toInt())
+        val iv = ByteArray(ivSize[0].toInt())
         os.read(iv)
 
         val spec = GCMParameterSpec(128, iv)
@@ -446,21 +439,40 @@ class EscrowCipher(private val externalScope: CoroutineScope) {
 
         cipher.init(Cipher.DECRYPT_MODE, getsKeyDec(uuid), spec)
         return CipherInputStream(os, cipher)
+        /*return CipherInputStream(os, cipher).also {
+            DataInputStream(it).apply {
+                name = readUTF()
+            }
+        }*/
     }
 
+    // delete keys not in list
     fun cleanUp(uuidList: List<String>) {
         for (alias in androidKS.aliases()) {
             if (alias.startsWith("sKey-")) {
                 val uuid = alias.removePrefix("sKey-").removeSuffix("-enc").removeSuffix("-dec")
                 if (!uuidList.contains(uuid)) {
-                    try {
-                        androidKS.deleteEntry("sKey-$uuid-enc")
-                        androidKS.deleteEntry("sKey-$uuid-dec")
-                    } catch (e: Exception) {
-                        Log.e("ESCROW", "Unable to clean up $uuid key")
-                    }
+                    deleteKey(uuid)
                 }
             }
         }
+    }
+
+    fun deleteKey(uuid : String) {
+        try {
+            androidKS.deleteEntry("sKey-$uuid-enc")
+            androidKS.deleteEntry("sKey-$uuid-dec")
+        } catch (e: Exception) {
+            Log.e("ESCROW", "Unable to clean up $uuid key")
+        }
+    }
+    fun listKeys() : List<String>{
+        return androidKS.aliases().toList().map {
+            if (it.startsWith("sKey-")) {
+                it.removePrefix("sKey-").removeSuffix("-enc").removeSuffix("-dec")
+            } else {
+                null
+            }
+        }.filterNotNull()
     }
 }

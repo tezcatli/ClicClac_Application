@@ -1,171 +1,154 @@
 package com.example.myapplication
 
-import android.Manifest
-import android.content.ContentValues
+import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Build
+import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
-import androidx.appcompat.app.AppCompatActivity
+import android.util.Log
+import android.view.ViewGroup
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.sharp.Details
+import androidx.compose.material.icons.sharp.Lens
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.tooling.preview.Preview as CPreview
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.myapplication.databinding.ActivityMainBinding
+import androidx.test.core.app.ActivityScenario.launch
+import com.example.myapplication.ui.theme.MyApplicationTheme
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import okhttp3.internal.wait
+import java.io.File
+import java.net.URL
+import java.text.SimpleDateFormat
+import java.time.ZonedDateTime
+import java.util.Locale
+import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import android.widget.Toast
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.core.Preview
-import androidx.camera.core.CameraSelector
-import android.util.Log
-import androidx.camera.core.ImageCaptureException
-import java.text.SimpleDateFormat
-import java.util.Locale
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.coroutineContext
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import java.net.URL
-import java.time.ZonedDateTime
+@AndroidEntryPoint
+class MainActivity : ComponentActivity(), CoroutineScope {
+    private lateinit var mJob: Job
+    override val coroutineContext: CoroutineContext
+        get() = mJob + Dispatchers.Main
 
-class MainActivity : AppCompatActivity() {
-    private lateinit var viewBinding: ActivityMainBinding
-
-    private var imageCapture: ImageCapture? = null
-
-
+    private lateinit var outputDirectory: File
     private lateinit var cameraExecutor: ExecutorService
 
+    private lateinit var escrowManager: EscrowManager
+
+    private var shouldShowCamera: MutableState<Boolean> = mutableStateOf(false)
+
+    private lateinit var listPending: List<EscrowDbEntry>
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        viewBinding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(viewBinding.root)
 
-        // Request camera permissions
-        if (allPermissionsGranted()) {
-            startCamera()
-        } else {
-            ActivityCompat.requestPermissions(
-                this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS
+        mJob = Job()
+
+        launch(Dispatchers.IO) {
+
+            //  async(Dispatchers.IO) {
+            outputDirectory = getOutputDirectory()
+            cameraExecutor = Executors.newSingleThreadExecutor()
+
+            escrowManager = EscrowManager(applicationContext)
+
+
+            escrowManager.init(URL("http://10.0.2.2:5000"))
+
+            listPending = listOf<EscrowDbEntry>()
+
+
+
+            requestCameraPermission()
+
+
+
+            //  EscrowedUIi(pending = listPending)
+
+            //    }
+            //}
+        }
+        setContent {
+
+            CameraView(
+                onCapture = ::takePhoto,
             )
         }
-
-        // Set up the listeners for take photo and video capture buttons
-        viewBinding.imageCaptureButton.setOnClickListener { takePhoto() }
-        //viewBinding.videoCaptureButton.setOnClickListener { captureVideo() }
-
-        cameraExecutor = Executors.newSingleThreadExecutor()
-/*
-        lifecycleScope.launch() {
-        val cipherEscrow = CipherEscrow(this)
-            cipherEscrow.init(URL("http://10.0.2.2:5000/certificate"))
-            cipherEscrow.escrow(ZonedDateTime.parse("2023-12-03T10:15:30+01:00[Europe/Paris]"))
-        }
-*/
-
-        /*
-        'lifecycleScope'.launch() {
-            var client : OkHttpClient = OkHttpClient();
+        //requestCameraPermission()
 
 
-                var request = Request.Builder()
-                    .url("https://www.google.com")
-                    .build();
-
-            withContext(Dispatchers.IO) {
-
-                var response: Response = client.newCall(request).execute()
-                Log.e("HTTP", response!!.body!!.string())
-
-            }
-        }
-        */
-       // lifecycleScope.launch
     }
 
-    private fun takePhoto() {
-        // Get a stable reference of the modifiable image capture use case
-        val imageCapture = imageCapture ?: return
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            Log.i("kilo", "Permission granted")
+        } else {
+            Log.i("kilo", "Permission denied")
+        }
+    }
 
-        // Create time stamped name and MediaStore entry.
-        val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
-            .format(System.currentTimeMillis())
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-            if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/CameraX-Image")
-            }
+    private fun handleImageCapture(uri: Uri) {
+        Log.i("kilo", "Image captured: $uri")
+        shouldShowCamera.value = false
+    }
+
+    private fun getOutputDirectory(): File {
+        val mediaDir = externalMediaDirs.firstOrNull()?.let {
+            File(it, resources.getString(R.string.app_name)).apply { mkdirs() }
         }
 
-        // Create output options object which contains file + metadata
-        val outputOptions = ImageCapture.OutputFileOptions
-            .Builder(contentResolver,
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                contentValues)
-            .build()
-
-        // Set up image capture listener, which is triggered after photo has
-        // been taken
-        imageCapture.takePicture(
-            outputOptions,
-            ContextCompat.getMainExecutor(this),
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onError(exc: ImageCaptureException) {
-                    Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
-                }
-
-                override fun
-                        onImageSaved(output: ImageCapture.OutputFileResults){
-                    val msg = "Photo capture succeeded: ${output.savedUri}"
-                    Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
-                    Log.d(TAG, msg)
-                }
-            }
-        )
-    }
-
-    private fun captureVideo() {}
-
-    private fun startCamera() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-
-        cameraProviderFuture.addListener({
-            // Used to bind the lifecycle of cameras to the lifecycle owner
-            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-
-            // Preview
-            val preview = Preview.Builder()
-                .build()
-                .also {
-                    it.setSurfaceProvider(viewBinding.viewFinder.surfaceProvider)
-                }
-
-            imageCapture = ImageCapture.Builder()
-                .build()
-
-            // Select back camera as a default
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
-            try {
-                // Unbind use cases before rebinding
-                cameraProvider.unbindAll()
-
-                // Bind use cases to camera
-                cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview, imageCapture)
-
-            } catch(exc: Exception) {
-                Log.e(TAG, "Use case binding failed", exc)
-            }
-
-        }, ContextCompat.getMainExecutor(this))
-    }
-
-
-    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
-        ContextCompat.checkSelfPermission(
-            baseContext, it) == PackageManager.PERMISSION_GRANTED
+        return if (mediaDir != null && mediaDir.exists()) mediaDir else filesDir
     }
 
     override fun onDestroy() {
@@ -173,36 +156,159 @@ class MainActivity : AppCompatActivity() {
         cameraExecutor.shutdown()
     }
 
-    companion object {
-        private const val TAG = "CameraXApp"
-        private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
-        private const val REQUEST_CODE_PERMISSIONS = 10
-        private val REQUIRED_PERMISSIONS =
-            mutableListOf (
-                Manifest.permission.CAMERA
-            ).apply {
-                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                    add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                }
-            }.toTypedArray()
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int, permissions: Array<String>, grantResults:
-        IntArray) {
-        if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            if (allPermissionsGranted()) {
-                startCamera()
-            } else {
-                Toast.makeText(this,
-                    "Permissions not granted by the user.",
-                    Toast.LENGTH_SHORT).show()
-                finish()
+    private fun requestCameraPermission() {
+        when {
+            ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                Log.i("kilo", "Permission previously granted")
             }
+
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                this,
+                android.Manifest.permission.CAMERA
+            ) -> Log.i("kilo", "Show camera permissions dialog")
+
+            else -> requestPermissionLauncher.launch(android.Manifest.permission.CAMERA)
         }
     }
 
+    private fun takePhoto(
+        imageCapture: ImageCapture,
+    ) {
+        launch(Dispatchers.IO) {
 
+            val dateTime = ZonedDateTime.now()
+
+            val uuid =
+                escrowManager.add(dateTime.plusMinutes(10))
+
+            val ostream = escrowManager.EOutputStream(uuid, uuid, "$dateTime.jpg")
+
+
+            val outputOptions = ImageCapture.OutputFileOptions.Builder(ostream.outputStream).build()
+
+            imageCapture.takePicture(
+                outputOptions,
+                executor,
+                object : ImageCapture.OnImageSavedCallback {
+                    override fun onError(exception: ImageCaptureException) {
+                        Log.e("kilo", "Take photo error:", exception)
+                        onError(exception)
+                    }
+
+                    override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                        //val savedUri = Uri.fromFile(photoFile)
+                        Log.i("Picture", "Photo shoot")
+                        //onImageCaptured(savedUri)
+                    }
+                })
+        }
+    }
+}
+
+suspend fun Context.getCameraProvider(): ProcessCameraProvider = suspendCoroutine { continuation ->
+    ProcessCameraProvider.getInstance(this).also { future ->
+        future.addListener({
+            continuation.resume(future.get())
+        }, executor)
+    }
+}
+
+val Context.executor: Executor
+    get() = ContextCompat.getMainExecutor(this)
+
+
+@Composable
+fun CameraView(
+    onCapture: (ImageCapture) -> Unit,
+) {
+    // 1
+    val lensFacing = CameraSelector.LENS_FACING_BACK
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    val preview = Preview.Builder().build()
+    val previewView = remember { PreviewView(context) }
+
+    val imageCapture: ImageCapture = remember { ImageCapture.Builder().build() }
+    val cameraSelector = CameraSelector.Builder()
+        .requireLensFacing(lensFacing)
+        .build()
+
+    // 2
+    LaunchedEffect(lensFacing) {
+        val cameraProvider = context.getCameraProvider()
+        cameraProvider.unbindAll()
+        cameraProvider.bindToLifecycle(
+            lifecycleOwner,
+            cameraSelector,
+            preview,
+            imageCapture
+        )
+
+        preview.setSurfaceProvider(previewView.surfaceProvider)
+    }
+
+    // 3
+    Box(contentAlignment = Alignment.BottomCenter, modifier = Modifier.fillMaxSize()) {
+        AndroidView({ previewView }, modifier = Modifier.fillMaxSize())
+        Row(
+            modifier = Modifier
+                .padding(bottom = 20.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Spacer(Modifier.weight(1.0f))
+
+            IconButton(
+                modifier = Modifier.weight(1.0f),
+                onClick = {
+                    Log.i("kilo", "ON CLICK")
+                    onCapture(imageCapture)
+                },
+                content = {
+                    Icon(
+                        imageVector = Icons.Sharp.Lens,
+                        contentDescription = "Take picture",
+                        tint = Color.White,
+                        modifier = Modifier
+                            .size(100.dp)
+                            .padding(1.dp)
+                            .border(1.dp, Color.White, CircleShape)
+                    )
+                }
+            )
+
+
+            IconButton(
+                modifier = Modifier.weight(1.0f),
+                onClick = {
+                    Log.i("kilo", "ON CLICK")
+                    onCapture(imageCapture)
+                },
+                content = {
+                    Icon(
+                        imageVector = Icons.Sharp.Details,
+                        contentDescription = "Take picture",
+                        tint = Color.White,
+                        modifier = Modifier
+                            .size(100.dp)
+                            .padding(1.dp)
+                            .border(1.dp, Color.White, CircleShape)
+                    )
+                }
+            )
+        }
+    }
 }
 
 
+@CPreview
+@Composable
+fun DefaultPreview() {
+    CameraView(
+        onCapture = {}
+    )
+}

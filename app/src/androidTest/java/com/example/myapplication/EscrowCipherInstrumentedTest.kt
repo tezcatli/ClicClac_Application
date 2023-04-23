@@ -33,8 +33,8 @@ class EscrowCipherInstrumentedTest {
     fun escrowUnescrow() = runTest {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
-        val cipherEscrow = EscrowCipher(this)
-        cipherEscrow.init(appContext, URL("http://10.0.2.2:5000"))
+        val cipherEscrow = EscrowCipher(appContext)
+        cipherEscrow.init(URL("http://10.0.2.2:5000"))
 
         val uuid = UUID.randomUUID().toString()
 
@@ -64,8 +64,8 @@ class EscrowCipherInstrumentedTest {
     fun escrowUnescrowUnexpiredKeyRemote() = runTest {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
-        val cipherEscrow = EscrowCipher(this)
-        cipherEscrow.init(appContext, URL("http://10.0.2.2:5000"))
+        val cipherEscrow = EscrowCipher(appContext)
+        cipherEscrow.init(URL("http://10.0.2.2:5000"))
 
         val uuid = UUID.randomUUID().toString()
 
@@ -86,8 +86,8 @@ class EscrowCipherInstrumentedTest {
     fun escrowUnescrowUnexpiredKeyLocal() = runTest {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
-        val cipherEscrow = EscrowCipher(this)
-        cipherEscrow.init(appContext, URL("http://10.0.2.2:5000"))
+        val cipherEscrow = EscrowCipher(appContext)
+        cipherEscrow.init(URL("http://10.0.2.2:5000"))
 
         val uuid = UUID.randomUUID().toString()
 
