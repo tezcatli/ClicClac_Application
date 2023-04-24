@@ -8,6 +8,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
+import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
@@ -40,22 +41,25 @@ data class EscrowDbEntry(
 @Dao
 interface EscrowDbDao {
     @Query("SELECT * FROM EscrowDbEntry")
-    fun getAll(): List<EscrowDbEntry>
+    suspend fun getAll(): List<EscrowDbEntry>
 
     @Query("SELECT * FROM EscrowDbEntry WHERE uuid = (:uuid)")
-    fun findById(uuid: String): EscrowDbEntry
+    suspend fun findById(uuid: String): EscrowDbEntry
 
     @Query("DELETE FROM EscrowDbEntry WHERE uuid = (:uuid)")
-    fun deleteById(uuid: String)
+    suspend fun deleteById(uuid: String)
 
     @Query("SELECT * FROM EscrowDbEntry WHERE deadline >= (:deadline)")
-    fun findExpired(deadline: ZonedDateTime): List<EscrowDbEntry>
+    suspend fun findExpired(deadline: ZonedDateTime): List<EscrowDbEntry>
 
     @Query("SELECT * FROM EscrowDbEntry WHERE deadline < (:deadline)")
-    fun findPending(deadline: ZonedDateTime): List<EscrowDbEntry>
+    suspend fun findPending(deadline: ZonedDateTime): List<EscrowDbEntry>
+
+    @Query("SELECT * FROM EscrowDbEntry WHERE deadline < (:deadline)")
+    fun findPendingF(deadline: ZonedDateTime): Flow<List<EscrowDbEntry>>
 
     @Insert
-    fun insertAll(vararg users: EscrowDbEntry)
+    suspend fun insertAll(vararg users: EscrowDbEntry)
 }
 
 

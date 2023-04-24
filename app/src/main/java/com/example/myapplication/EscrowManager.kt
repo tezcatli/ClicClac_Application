@@ -2,13 +2,18 @@ package com.example.myapplication
 
 import android.content.Context
 import androidx.room.Room
+import androidx.test.core.app.ActivityScenario.launch
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.*
 import java.net.URL
 import java.time.ZonedDateTime
@@ -30,19 +35,44 @@ object EscrowManagerModule {
 }
 
 class EscrowManager(private val appContext : Context) {
-    var cipherEscrow: EscrowCipher = EscrowCipher(appContext)
+    private var cipherEscrow: EscrowCipher = EscrowCipher(appContext)
 
-    var databaseEscrow = Room.databaseBuilder(
+    private var databaseEscrow = Room.databaseBuilder(
         appContext,
         EscrowDb::class.java, "database-name"
     ).build()
+
+
+    suspend fun init(url: URL, onReady : () -> Unit) {
+        withContext(Dispatchers.IO) {
+            cipherEscrow.init(url)
+            cleanUp()
+        }
+        onReady()
+
+    }
+
 
     suspend fun init(url: URL) {
         cipherEscrow.init(url)
         cleanUp()
     }
 
-    fun add(dateTime: ZonedDateTime): String {
+    companion object {
+        @Volatile
+        private var Instance: EscrowManager? = null
+
+        fun getInstance(context : Context) : EscrowManager {
+            return Instance ?: synchronized(this) {
+                return getInstance(context).also { Instance = it }
+            }
+        }
+
+
+
+    }
+
+    suspend fun add(dateTime: ZonedDateTime): String {
         val uuid = UUID.randomUUID().toString()
         cipherEscrow.escrow(dateTime, uuid)
 
@@ -54,21 +84,25 @@ class EscrowManager(private val appContext : Context) {
         return uuid
     }
 
-    fun listExpired(): List<EscrowDbEntry> {
+   suspend fun listExpired(): List<EscrowDbEntry> {
         return databaseEscrow.escrowDbDao().findExpired(ZonedDateTime.now())
     }
 
-    fun listPending(): List<EscrowDbEntry> {
+    suspend fun listPending(): List<EscrowDbEntry> {
         return databaseEscrow.escrowDbDao().findPending(ZonedDateTime.now())
     }
 
-    fun recover(uuid: String): SecretKey {
+    fun listPendingF(): Flow<List<EscrowDbEntry>> {
+        return databaseEscrow.escrowDbDao().findPendingF(ZonedDateTime.now())
+    }
+
+    suspend fun recover(uuid: String): SecretKey {
         val escrow = databaseEscrow.escrowDbDao().findById(uuid)
         return cipherEscrow.getsKeyDec(escrow.UUID)
     }
 
 
-    fun cleanUp() {
+    suspend fun cleanUp() {
         // delete all db entries without associated keys
         cipherEscrow.cleanUp(databaseEscrow.escrowDbDao().getAll().map { it.UUID })
 
@@ -87,18 +121,22 @@ class EscrowManager(private val appContext : Context) {
    // }
 
     inner class EInputStream(private val fileName: String, private val uuid: String) {
-        var streamName : String
-        var token : String
+        lateinit var streamName : String
+        lateinit var token : String
+        lateinit var inputStream : InputStream
 
-        val inputStream : InputStream = File(appContext.filesDir, fileName).inputStream().let {
-            DataInputStream(it).run {
-                token = readUTF()
-            }
-            cipherEscrow.setupInputStream(it, uuid).apply {
-                DataInputStream(this).run {
-                    streamName = readUTF()
+        suspend fun build ()  : EInputStream {
+            inputStream = File(appContext.filesDir, fileName).inputStream().let {
+                DataInputStream(it).run {
+                    token = readUTF()
+                }
+                cipherEscrow.setupInputStream(it, uuid).apply {
+                    DataInputStream(this).run {
+                        streamName = readUTF()
+                    }
                 }
             }
+            return this
         }
     }
 
@@ -106,20 +144,31 @@ class EscrowManager(private val appContext : Context) {
     //    return EOutputStream(fileName, uuid, streamName)
     //}
 
-    inner class EOutputStream(filename: String, uuid: String, streamName: String) {
-        val token = databaseEscrow.escrowDbDao().findById(uuid).token
+    inner class EOutputStream(val filename: String, val uuid: String,
+                              val streamName: String) {
 
-        val outputStream =  File(appContext.filesDir, filename).outputStream().let {
-            DataOutputStream(it).run {
-                writeUTF(token)
-                flush()
-            }
-            cipherEscrow.setupOutputStream(it, uuid).apply {
-                DataOutputStream(this).run {
-                    writeUTF(streamName)
+        lateinit var outputStream : OutputStream
+
+        suspend fun build () : EOutputStream {
+            val token = databaseEscrow.escrowDbDao().findById(uuid).token
+
+
+            outputStream = File(appContext.filesDir, filename).outputStream().let {
+
+                DataOutputStream(it).run {
+                    writeUTF(token)
                     flush()
                 }
+                cipherEscrow.setupOutputStream(it, uuid).apply {
+                    DataOutputStream(this).run {
+                        writeUTF(streamName)
+                        flush()
+                    }
+                }
             }
+            return this
         }
     }
+
+
 }

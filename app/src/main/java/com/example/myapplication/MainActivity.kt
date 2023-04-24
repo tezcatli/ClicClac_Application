@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.contextaware.withContextAvailable
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -51,7 +52,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.test.core.app.ActivityScenario.launch
+import com.example.myapplication.ui.ClicClacApp
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -93,39 +96,36 @@ class MainActivity : ComponentActivity(), CoroutineScope {
 
         mJob = Job()
 
-        launch(Dispatchers.IO) {
 
-            //  async(Dispatchers.IO) {
-            outputDirectory = getOutputDirectory()
-            cameraExecutor = Executors.newSingleThreadExecutor()
+        outputDirectory = getOutputDirectory()
+        cameraExecutor = Executors.newSingleThreadExecutor()
+        escrowManager = EscrowManager(applicationContext)
+        listPending = listOf<EscrowDbEntry>()
 
-            escrowManager = EscrowManager(applicationContext)
-
-
-            escrowManager.init(URL("http://10.0.2.2:5000"))
-
-            listPending = listOf<EscrowDbEntry>()
+        requestCameraPermission()
 
 
-
-            requestCameraPermission()
-
-
-
-            //  EscrowedUIi(pending = listPending)
-
-            //    }
-            //}
+        lifecycleScope.launch {
+            escrowManager.init(URL("http://10.0.2.2:5000"), ::onReady)
         }
+
+
+    }
+
+    fun onReady() {
+
         setContent {
 
+            /*
             CameraView(
                 onCapture = ::takePhoto,
             )
+            */
+
+            (application as CliClacApplication).escrowManager = escrowManager
+
+            ClicClacApp()
         }
-        //requestCameraPermission()
-
-
     }
 
     private val requestPermissionLauncher = registerForActivityResult(
@@ -184,7 +184,7 @@ class MainActivity : ComponentActivity(), CoroutineScope {
             val uuid =
                 escrowManager.add(dateTime.plusMinutes(10))
 
-            val ostream = escrowManager.EOutputStream(uuid, uuid, "$dateTime.jpg")
+            val ostream = escrowManager.EOutputStream(uuid, uuid, "$dateTime.jpg").build()
 
 
             val outputOptions = ImageCapture.OutputFileOptions.Builder(ostream.outputStream).build()

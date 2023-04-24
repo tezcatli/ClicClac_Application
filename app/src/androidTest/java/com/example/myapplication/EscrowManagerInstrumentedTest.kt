@@ -33,11 +33,11 @@ class EscrowManagerInstrumentedTest {
         //val ostream = escrowManager.setupOutputStream("testFile", uuid)
 
 
-        val ostream = escrowManager.EOutputStream("testFile", uuid,encryptedFileName)
+        val ostream = escrowManager.EOutputStream("testFile", uuid,encryptedFileName).build()
         ostream.outputStream.write(testVector)
         ostream.outputStream.close()
 
-        val istream = escrowManager.EInputStream("testFile", uuid)
+        val istream = escrowManager.EInputStream("testFile", uuid).build()
 
         val compareVector = istream.inputStream.readBytes()
         istream.inputStream.close()
