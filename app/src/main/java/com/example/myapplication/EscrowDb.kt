@@ -49,13 +49,16 @@ interface EscrowDbDao {
     @Query("DELETE FROM EscrowDbEntry WHERE uuid = (:uuid)")
     suspend fun deleteById(uuid: String)
 
-    @Query("SELECT * FROM EscrowDbEntry WHERE deadline >= (:deadline)")
+    @Query("SELECT * FROM EscrowDbEntry WHERE deadline < (:deadline)")
     suspend fun findExpired(deadline: ZonedDateTime): List<EscrowDbEntry>
 
     @Query("SELECT * FROM EscrowDbEntry WHERE deadline < (:deadline)")
+    fun findExpiredF(deadline: ZonedDateTime): Flow<List<EscrowDbEntry>>
+
+    @Query("SELECT * FROM EscrowDbEntry WHERE deadline >= (:deadline)")
     suspend fun findPending(deadline: ZonedDateTime): List<EscrowDbEntry>
 
-    @Query("SELECT * FROM EscrowDbEntry WHERE deadline < (:deadline)")
+    @Query("SELECT * FROM EscrowDbEntry WHERE deadline >= (:deadline)")
     fun findPendingF(deadline: ZonedDateTime): Flow<List<EscrowDbEntry>>
 
     @Insert

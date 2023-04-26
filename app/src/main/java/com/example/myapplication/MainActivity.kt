@@ -78,29 +78,24 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity(), CoroutineScope {
-    private lateinit var mJob: Job
-    override val coroutineContext: CoroutineContext
-        get() = mJob + Dispatchers.Main
+class MainActivity : ComponentActivity() {
 
-    private lateinit var outputDirectory: File
-    private lateinit var cameraExecutor: ExecutorService
+
+    //private lateinit var outputDirectory: File
+    // private lateinit var cameraExecutor: ExecutorService
 
     private lateinit var escrowManager: EscrowManager
 
     private var shouldShowCamera: MutableState<Boolean> = mutableStateOf(false)
 
-    private lateinit var listPending: List<EscrowDbEntry>
+    //private lateinit var listPending: List<EscrowDbEntry>
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        mJob = Job()
-
-
-        outputDirectory = getOutputDirectory()
-        cameraExecutor = Executors.newSingleThreadExecutor()
+        //outputDirectory = getOutputDirectory()
+        // cameraExecutor = Executors.newSingleThreadExecutor()
         escrowManager = EscrowManager(applicationContext)
-        listPending = listOf<EscrowDbEntry>()
+        //listPending = listOf<EscrowDbEntry>()
 
         requestCameraPermission()
 
@@ -113,17 +108,8 @@ class MainActivity : ComponentActivity(), CoroutineScope {
     }
 
     fun onReady() {
-
         setContent {
-
-            /*
-            CameraView(
-                onCapture = ::takePhoto,
-            )
-            */
-
             (application as CliClacApplication).escrowManager = escrowManager
-
             ClicClacApp()
         }
     }
@@ -138,6 +124,7 @@ class MainActivity : ComponentActivity(), CoroutineScope {
         }
     }
 
+    /*
     private fun handleImageCapture(uri: Uri) {
         Log.i("kilo", "Image captured: $uri")
         shouldShowCamera.value = false
@@ -150,10 +137,12 @@ class MainActivity : ComponentActivity(), CoroutineScope {
 
         return if (mediaDir != null && mediaDir.exists()) mediaDir else filesDir
     }
+    */
+
 
     override fun onDestroy() {
         super.onDestroy()
-        cameraExecutor.shutdown()
+        // cameraExecutor.shutdown()
     }
 
     private fun requestCameraPermission() {
@@ -173,142 +162,7 @@ class MainActivity : ComponentActivity(), CoroutineScope {
             else -> requestPermissionLauncher.launch(android.Manifest.permission.CAMERA)
         }
     }
-
-    private fun takePhoto(
-        imageCapture: ImageCapture,
-    ) {
-        launch(Dispatchers.IO) {
-
-            val dateTime = ZonedDateTime.now()
-
-            val uuid =
-                escrowManager.add(dateTime.plusMinutes(10))
-
-            val ostream = escrowManager.EOutputStream(uuid, uuid, "$dateTime.jpg").build()
-
-
-            val outputOptions = ImageCapture.OutputFileOptions.Builder(ostream.outputStream).build()
-
-            imageCapture.takePicture(
-                outputOptions,
-                executor,
-                object : ImageCapture.OnImageSavedCallback {
-                    override fun onError(exception: ImageCaptureException) {
-                        Log.e("kilo", "Take photo error:", exception)
-                        onError(exception)
-                    }
-
-                    override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                        //val savedUri = Uri.fromFile(photoFile)
-                        Log.i("Picture", "Photo shoot")
-                        //onImageCaptured(savedUri)
-                    }
-                })
-        }
-    }
-}
-
-suspend fun Context.getCameraProvider(): ProcessCameraProvider = suspendCoroutine { continuation ->
-    ProcessCameraProvider.getInstance(this).also { future ->
-        future.addListener({
-            continuation.resume(future.get())
-        }, executor)
-    }
-}
-
-val Context.executor: Executor
-    get() = ContextCompat.getMainExecutor(this)
-
-
-@Composable
-fun CameraView(
-    onCapture: (ImageCapture) -> Unit,
-) {
-    // 1
-    val lensFacing = CameraSelector.LENS_FACING_BACK
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    val preview = Preview.Builder().build()
-    val previewView = remember { PreviewView(context) }
-
-    val imageCapture: ImageCapture = remember { ImageCapture.Builder().build() }
-    val cameraSelector = CameraSelector.Builder()
-        .requireLensFacing(lensFacing)
-        .build()
-
-    // 2
-    LaunchedEffect(lensFacing) {
-        val cameraProvider = context.getCameraProvider()
-        cameraProvider.unbindAll()
-        cameraProvider.bindToLifecycle(
-            lifecycleOwner,
-            cameraSelector,
-            preview,
-            imageCapture
-        )
-
-        preview.setSurfaceProvider(previewView.surfaceProvider)
-    }
-
-    // 3
-    Box(contentAlignment = Alignment.BottomCenter, modifier = Modifier.fillMaxSize()) {
-        AndroidView({ previewView }, modifier = Modifier.fillMaxSize())
-        Row(
-            modifier = Modifier
-                .padding(bottom = 20.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Spacer(Modifier.weight(1.0f))
-
-            IconButton(
-                modifier = Modifier.weight(1.0f),
-                onClick = {
-                    Log.i("kilo", "ON CLICK")
-                    onCapture(imageCapture)
-                },
-                content = {
-                    Icon(
-                        imageVector = Icons.Sharp.Lens,
-                        contentDescription = "Take picture",
-                        tint = Color.White,
-                        modifier = Modifier
-                            .size(100.dp)
-                            .padding(1.dp)
-                            .border(1.dp, Color.White, CircleShape)
-                    )
-                }
-            )
-
-
-            IconButton(
-                modifier = Modifier.weight(1.0f),
-                onClick = {
-                    Log.i("kilo", "ON CLICK")
-                    onCapture(imageCapture)
-                },
-                content = {
-                    Icon(
-                        imageVector = Icons.Sharp.Details,
-                        contentDescription = "Take picture",
-                        tint = Color.White,
-                        modifier = Modifier
-                            .size(100.dp)
-                            .padding(1.dp)
-                            .border(1.dp, Color.White, CircleShape)
-                    )
-                }
-            )
-        }
-    }
 }
 
 
-@CPreview
-@Composable
-fun DefaultPreview() {
-    CameraView(
-        onCapture = {}
-    )
-}
+

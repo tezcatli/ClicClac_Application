@@ -84,8 +84,19 @@ class EscrowManager(private val appContext : Context) {
         return uuid
     }
 
+    suspend fun delete(uuid: String) {
+
+        databaseEscrow.escrowDbDao().deleteById(uuid)
+        cipherEscrow.deleteKey(uuid)
+
+    }
+
    suspend fun listExpired(): List<EscrowDbEntry> {
         return databaseEscrow.escrowDbDao().findExpired(ZonedDateTime.now())
+    }
+
+    fun listExpiredF(): Flow<List<EscrowDbEntry>> {
+        return databaseEscrow.escrowDbDao().findExpiredF(ZonedDateTime.now())
     }
 
     suspend fun listPending(): List<EscrowDbEntry> {

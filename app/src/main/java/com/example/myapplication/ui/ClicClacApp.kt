@@ -1,15 +1,20 @@
 package com.example.myapplication.ui
 
-import androidx.compose.material3.Text
+import android.util.Log
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.myapplication.EscrowedUI
 import com.example.myapplication.R
+import com.example.myapplication.ui.theme.MyApplicationTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.time.ZonedDateTime
 
 interface NavigationDestination {
     /**
@@ -23,8 +28,13 @@ interface NavigationDestination {
     val titleRes: Int
 }
 
-object HomeDestination : NavigationDestination {
+object EscrowedListDestination : NavigationDestination {
     override val route = "home"
+    override val titleRes = R.string.app_name
+}
+
+object CameraDestination : NavigationDestination {
+    override val route = "camera"
     override val titleRes = R.string.app_name
 }
 
@@ -32,17 +42,30 @@ object HomeDestination : NavigationDestination {
 fun ClicClacApp(navController: NavHostController = rememberNavController()) {
     InventoryNavHost(navController = navController)
 }
+
 @Composable
 fun InventoryNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
 ) {
-    NavHost(
-        navController = navController,
-        startDestination = HomeDestination.route,
-        modifier = modifier
-    ) {
-        composable(route = HomeDestination.route) {
-            EscrowedUI()
+    MaterialTheme {
+
+        NavHost(
+            navController = navController,
+            startDestination = EscrowedListDestination.route,
+            modifier = modifier
+        ) {
+            composable(route = EscrowedListDestination.route) {
+                EscrowedListScreen(onCameraClick = { navController.navigate(CameraDestination.route) })
+            }
+            composable(route = CameraDestination.route) {
+                CameraScreen(
+                    onConfig = { navController.navigate(EscrowedListDestination.route) }
+//                onCapture = {}
+                )
+            }
         }
-    }}
+    }
+}
+
+
