@@ -81,21 +81,13 @@ import kotlin.coroutines.suspendCoroutine
 class MainActivity : ComponentActivity() {
 
 
-    //private lateinit var outputDirectory: File
-    // private lateinit var cameraExecutor: ExecutorService
-
     private lateinit var escrowManager: EscrowManager
 
-    private var shouldShowCamera: MutableState<Boolean> = mutableStateOf(false)
-
-    //private lateinit var listPending: List<EscrowDbEntry>
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        //outputDirectory = getOutputDirectory()
-        // cameraExecutor = Executors.newSingleThreadExecutor()
+
         escrowManager = EscrowManager(applicationContext)
-        //listPending = listOf<EscrowDbEntry>()
 
         requestCameraPermission()
 
@@ -121,6 +113,7 @@ class MainActivity : ComponentActivity() {
             Log.i("kilo", "Permission granted")
         } else {
             Log.i("kilo", "Permission denied")
+            requestCameraPermission()
         }
     }
 
@@ -146,6 +139,22 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestCameraPermission() {
+        when {
+            ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                Log.i("kilo", "Permission previously granted")
+            }
+
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                this,
+                android.Manifest.permission.CAMERA
+            ) -> Log.i("kilo", "Show camera permissions dialog")
+
+            else -> requestPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+        }
+
         when {
             ContextCompat.checkSelfPermission(
                 this,

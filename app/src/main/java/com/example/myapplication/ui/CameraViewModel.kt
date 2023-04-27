@@ -32,9 +32,9 @@ class CameraViewModel(private val executor : Executor, private val escrowManager
             val dateTime = ZonedDateTime.now()
 
             val uuid =
-                escrowManager.add(dateTime.plusMinutes(10))
+                escrowManager.add(dateTime.plusMinutes(2))
 
-            val ostream = escrowManager.EOutputStream(uuid, uuid, "$dateTime.jpg").build()
+            val ostream = escrowManager.EOutputStream(uuid, uuid, dateTime.toLocalDateTime().toString() + ".jpg").build()
 
 
             val outputOptions = ImageCapture.OutputFileOptions.Builder(ostream.outputStream).build()
