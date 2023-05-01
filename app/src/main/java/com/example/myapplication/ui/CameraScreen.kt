@@ -18,8 +18,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.sharp.Camera
 import androidx.compose.material.icons.sharp.Details
 import androidx.compose.material.icons.sharp.Lens
+import androidx.compose.material.icons.sharp.Menu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -109,7 +111,7 @@ fun CameraScreen(
                 },
                 content = {
                     Icon(
-                        imageVector = Icons.Sharp.Lens,
+                        imageVector = Icons.Sharp.Camera,
                         contentDescription = "Take picture",
                         tint = Color.White,
                         modifier = Modifier
@@ -129,7 +131,7 @@ fun CameraScreen(
                 },
                 content = {
                     Icon(
-                        imageVector = Icons.Sharp.Details,
+                        imageVector = Icons.Sharp.Menu,
                         contentDescription = "Config",
                         tint = Color.White,
                         modifier = Modifier

@@ -70,6 +70,26 @@ import javax.crypto.spec.SecretKeySpec
 
  */
 
+val PEM_CERTIFICATE = """
+-----BEGIN CERTIFICATE-----
+MIIC9zCCAlqgAwIBAgIUfpIgqEPo9nIt8KHGrS0n4KULDDgwCgYIKoZIzj0EAwIw
+gY0xCzAJBgNVBAYTAkZSMRYwFAYDVQQIDA1JbGUgRGUgRnJhbmNlMQ4wDAYDVQQH
+DAVQYXJpczEOMAwGA1UECgwFQmxvcmcxEzARBgNVBAsMClBsb3JnIFVuaXQxEjAQ
+BgNVBAMMCUJsb3JnIENFTzEdMBsGCSqGSIb3DQEJARYOYmxvcmdAYmxvcmcuZnIw
+HhcNMjMwMzIwMDczNTA1WhcNMjQwMzE5MDczNTA1WjCBjTELMAkGA1UEBhMCRlIx
+FjAUBgNVBAgMDUlsZSBEZSBGcmFuY2UxDjAMBgNVBAcMBVBhcmlzMQ4wDAYDVQQK
+DAVCbG9yZzETMBEGA1UECwwKUGxvcmcgVW5pdDESMBAGA1UEAwwJQmxvcmcgQ0VP
+MR0wGwYJKoZIhvcNAQkBFg5ibG9yZ0BibG9yZy5mcjCBmzAQBgcqhkjOPQIBBgUr
+gQQAIwOBhgAEAKl1gMB+Z8x+kX4Xc7o6+wOw0y4aItvQzc/LUYuDV6ns68LP6s+j
+Ovi/LZPqjGGkWmvVP47MYg1QhyPxbGQC4PMrAFVUxA8iEOEImxpe6guVenGEZesb
+uP0a2vawSA3tUzHjSB0Q4DWfEyuOtMQX8rhNeg4oUW3dWkfxttRU+J61rYNuo1Mw
+UTAdBgNVHQ4EFgQUJ2d5BNtxF5jJGt1OmvR/mr+vviYwHwYDVR0jBBgwFoAUJ2d5
+BNtxF5jJGt1OmvR/mr+vviYwDwYDVR0TAQH/BAUwAwEB/zAKBggqhkjOPQQDAgOB
+igAwgYYCQRU2/3/6LtZvFI86x9Rvkuu7GbcCxGwkOyV6nO6cY3i/KdmX3l8DAYE+
+a1Ydexdod5mSAQsCXRXnWLsmY6MZOkP7AkE+zYs2EDE0c6+7OiMvVRpDlL3iWD/e
+DVQo+PBC5J6QwP01pVAg4Lh+uwzkS2Zb6P1fM2fEhZ7tmVM88qq0MkYv9w==
+-----END CERTIFICATE----- """.trimIndent()
+
 object ZonedDateTimeSerializer : KSerializer<ZonedDateTime> {
     override val descriptor: SerialDescriptor =
         PrimitiveSerialDescriptor("DateTime", PrimitiveKind.STRING)
@@ -216,9 +236,14 @@ class EscrowCipher(val context : Context) {
                 deferred.await()
             } catch (e: java.lang.Exception) {
                 Log.e("EXCEPTION", e.toString())
-                val certificate = File(context.filesDir, CERTIFICATE_FILE).readText()
-                x509certificate =
-                    cf.generateCertificate(certificate.byteInputStream()) as X509Certificate
+                try {
+                    val certificate = File(context.filesDir, CERTIFICATE_FILE).readText()
+                    x509certificate =
+                        cf.generateCertificate(certificate.byteInputStream()) as X509Certificate
+                } catch (e: java.io.FileNotFoundException) {
+                    x509certificate =
+                        cf.generateCertificate(PEM_CERTIFICATE.byteInputStream()) as X509Certificate
+                }
             }
         }
 
@@ -458,6 +483,8 @@ class EscrowCipher(val context : Context) {
         }
     }
 
+
+
     fun deleteKey(uuid : String) {
         try {
             androidKS.deleteEntry("sKey-$uuid-enc")
@@ -475,4 +502,60 @@ class EscrowCipher(val context : Context) {
             }
         }.filterNotNull()
     }
+}
+
+fun hex(bytes: ByteArray, len : Int = bytes.size): String? {
+    val result = StringBuilder()
+    for (i in 0 until len) {
+        result.append(String.format("%02x", bytes[i]))
+        // upper case
+        // result.append(String.format("%02X", aByte));
+    }
+    return result.toString()
+}
+
+class CipherInputStreamProcessor(val uuid : String, val escrowCipher : EscrowCipher) {
+
+    val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+    fun setUp(iv : ByteArray) {
+        val spec = GCMParameterSpec(128, iv.copyOf())
+
+        cipher.init(Cipher.DECRYPT_MODE, escrowCipher.getsKeyDec(uuid), spec)
+
+        //Log.e("CIPHER_INPUT_STREAM", "IV = " + hex(iv)!!)
+    }
+
+    fun decrypt(ciphered : ByteArray, len: Int, plain : ByteArray) {
+        //Log.e("CIPHER_INPUT_STREAM", "PAYLOAD = " + hex(ciphered, len)!!)
+        cipher.doFinal(ciphered, 0, len, plain)
+    }
+
+
+    // DOES NO INCLUDE IV
+    fun getByteOverhead() : Int {
+        return 16
+    }
+}
+
+class CipherOutputStreamProcessor(val uuid : String, val escrowCipher : EscrowCipher) {
+    val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+
+    // return IV
+    fun setUp() : ByteArray {
+        cipher.init(Cipher.ENCRYPT_MODE, escrowCipher.getsKeyEnc(uuid))
+        //Log.e("CIPHER_OUTPUT_STREAM", "IV = " + hex(cipher.iv.copyOf())!!)
+
+        return cipher.iv.copyOf()
+    }
+
+    // DOES NO INCLUDE IV
+    fun getByteOverhead() : Int {
+        return 16
+    }
+
+    fun encrypt(plain : ByteArray, len : Int,  ciphered: ByteArray) {
+        cipher.doFinal(plain, 0, len, ciphered)
+        //Log.e("CIPHER_OUTPUT_STREAM", "PAYLOAD = " + hex(ciphered, len)!!)
+    }
+
 }

@@ -33,54 +33,60 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.AppViewModelProvider
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun ConfigScreen(
     modifier: Modifier = Modifier.fillMaxWidth(),
     viewModel: ConfigViewModel = viewModel(factory = AppViewModelProvider.Factory),
-    onCassetteClick : ()->Unit = {}
+    onCassetteClick: () -> Unit = {}
+) {
+    val cassetteDevelopmentDelayState by viewModel.cassetteDevelopmentDelayState.collectAsState()
+
+    ConfigScreen2(
+        modifier,
+        onCassetteClick = onCassetteClick,
+        cassetteDevelopmentDelayState
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ConfigScreen2(
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    onCassetteClick: () -> Unit = {},
+    cassetteDevelopmentDelay: String = ""
 ) {
     //var textValue by remember { mutableStateOf("") }
 
-    val cassetteDevelopmentDelayState by viewModel.cassetteDevelopmentDelayState.collectAsState()
-
-    Column(
-        modifier = modifier.fillMaxSize()
+    OutlinedCard(
+        modifier = modifier.padding(all = 5.dp)
     ) {
-        Row(
-
+        Column(
+            modifier = modifier.padding(all = 10.dp)
         ) {
+
+            Column(
+                modifier = modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Cassette configuration",
+                    fontSize = 30.sp,
+                )
+                Divider(modifier = modifier.padding(vertical = 5.dp))
+            }
+
             Text(
-                modifier = Modifier.clickable(enabled = true) {onCassetteClick()},
-                text = "Deadline: $cassetteDevelopmentDelayState"
+                modifier = Modifier.clickable(enabled = true) { onCassetteClick() },
+                text = "Development delay: $cassetteDevelopmentDelay"
             )
         }
     }
 }
-
-/*
-@Composable
-fun ConfigScreenContent(modifier : Modifier = Modifier) {
-
-    Column(
-        modifier = modifier.fillMaxSize()
-    ) {
-        Row(
-
-        ) {
-            Text(
-                modifier = Modifier.clickable(enabled = true) {},
-                text = "Deadline: $textValue"
-            )
-        }
-    }
-}
-
 
 
 @Preview
 @Composable
 fun ConfigScreenPreview() {
-    ConfigScreen()
+    ConfigScreen2()
 }
-*/

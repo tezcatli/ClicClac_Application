@@ -62,7 +62,7 @@ class CameraViewModel(
                     override fun onError(exception: ImageCaptureException) {
                         Log.e("kilo", "Take photo error:", exception)
                         ostream.outputStream.close()
-                        onError(exception)
+//                        onError(exception)
                     }
 
                     override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {

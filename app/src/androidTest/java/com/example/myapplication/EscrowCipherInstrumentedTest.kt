@@ -6,10 +6,13 @@ import android.security.keystore.KeyProperties
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.example.myapplication.crypto.CipherInputStream
+import com.example.myapplication.crypto.CipherOutputStream
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 import java.net.URL
 import java.security.KeyStore
 import java.time.ZonedDateTime
@@ -38,7 +41,10 @@ class EscrowCipherInstrumentedTest {
 
         val uuid = UUID.randomUUID().toString()
 
-        val escrow = cipherEscrow.escrow(ZonedDateTime.parse("2022-12-03T10:15:30+01:00[Europe/Paris]"), uuid)
+        val escrow = cipherEscrow.escrow(
+            ZonedDateTime.parse("2022-12-03T10:15:30+01:00[Europe/Paris]"),
+            uuid
+        )
 
         val sKey = cipherEscrow.withdraw(listOf(escrow))
 
@@ -69,7 +75,10 @@ class EscrowCipherInstrumentedTest {
 
         val uuid = UUID.randomUUID().toString()
 
-        val escrow = cipherEscrow.escrow(ZonedDateTime.parse("2023-12-03T10:15:30+01:00[Europe/Paris]"), uuid)
+        val escrow = cipherEscrow.escrow(
+            ZonedDateTime.parse("2023-12-03T10:15:30+01:00[Europe/Paris]"),
+            uuid
+        )
 
         val sKey = cipherEscrow.withdraw(listOf(escrow))
 
@@ -80,6 +89,34 @@ class EscrowCipherInstrumentedTest {
         assertEquals(sKey[0], null)
     }
 
+
+    @kotlinx.coroutines.ExperimentalCoroutinesApi
+    fun escrowUnescrowExpiredKeyLocal() = runTest {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+
+        val cipherEscrow = EscrowCipher(appContext)
+        cipherEscrow.init(URL("http://10.0.2.2:5000"))
+
+        val uuid = UUID.randomUUID().toString()
+
+        val testVector = "Salut Les Amis".toByteArray()
+
+        val escrow = cipherEscrow.escrow(
+            ZonedDateTime.parse("2022-12-03T10:15:30+01:00[Europe/Paris]"),
+            uuid
+        )
+
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, cipherEscrow.getsKeyEnc(uuid))
+        val iv = cipher.iv.copyOf()
+        val cipheredText: ByteArray = cipher.doFinal(testVector)
+
+        val spec = GCMParameterSpec(128, iv)
+
+        cipher.init(Cipher.DECRYPT_MODE, cipherEscrow.getsKeyDec(uuid), spec)
+        assertArrayEquals(testVector, cipher.doFinal(cipheredText))
+
+    }
 
     @Test(expected = KeyNotYetValidException::class)
     @kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -93,7 +130,10 @@ class EscrowCipherInstrumentedTest {
 
         val testVector = "Salut Les Amis".toByteArray()
 
-        val escrow = cipherEscrow.escrow(ZonedDateTime.parse("2023-12-03T10:15:30+01:00[Europe/Paris]"), uuid)
+        val escrow = cipherEscrow.escrow(
+            ZonedDateTime.parse("2023-12-03T10:15:30+01:00[Europe/Paris]"),
+            uuid
+        )
 
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, cipherEscrow.getsKeyEnc(uuid))
@@ -104,6 +144,48 @@ class EscrowCipherInstrumentedTest {
 
         cipher.init(Cipher.DECRYPT_MODE, cipherEscrow.getsKeyDec(uuid), spec)
         assertArrayEquals(testVector, cipher.doFinal(cipheredText))
+
+    }
+
+
+    @Test
+    @kotlinx.coroutines.ExperimentalCoroutinesApi
+    fun escrowUnescrowExpiredKeyLocal2() = runTest {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+
+        val cipherEscrow = EscrowCipher(appContext)
+        cipherEscrow.init(URL("http://10.0.2.2:5000"))
+
+        val uuid = UUID.randomUUID().toString()
+
+        //val testVector = "Salut Les Amis".toByteArray()
+
+        //val testVector = ByteArray(568721)
+
+        val escrow = cipherEscrow.escrow(
+            ZonedDateTime.parse("2022-12-03T10:15:30+01:00[Europe/Paris]"),
+            uuid
+        )
+
+        for (testVector in listOf<ByteArray>(
+            ByteArray(14),
+            ByteArray(1024*128),
+            ByteArray(1024*128*2),
+            ByteArray(568721),
+            ByteArray(2644004))) {
+            val outputStream = File(appContext.filesDir, "testFile").outputStream()
+            val outputStreamProcessor = CipherOutputStreamProcessor(uuid, cipherEscrow)
+            val cipherOutputStream = CipherOutputStream(outputStream, outputStreamProcessor)
+            cipherOutputStream.write(testVector)
+            cipherOutputStream.close()
+
+            val inputStream = File(appContext.filesDir, "testFile").inputStream()
+            val inputStreamProcessor = CipherInputStreamProcessor(uuid, cipherEscrow)
+            val cipherInputStream = CipherInputStream(inputStream, inputStreamProcessor)
+            val resultVector = cipherInputStream.readBytes()
+
+            assertArrayEquals(testVector, resultVector)
+        }
 
     }
 

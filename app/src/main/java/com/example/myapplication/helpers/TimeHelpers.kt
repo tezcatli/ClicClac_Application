@@ -6,6 +6,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 class TimeHelpers {
 
@@ -36,6 +37,8 @@ class TimeHelpers {
                     "hours" -> value.hours
                     "minute" -> value.minutes
                     "minutes" -> value.minutes
+                    "second" -> value.seconds
+                    "seconds" -> value.seconds
                     else -> {
                         return 0.hours
                     }

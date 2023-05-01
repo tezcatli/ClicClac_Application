@@ -1,7 +1,10 @@
 package com.example.myapplication
 
 import android.content.Context
+import android.util.Log
 import androidx.room.Room
+import com.example.myapplication.crypto.CipherInputStream
+import com.example.myapplication.crypto.CipherOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -25,7 +28,7 @@ object EscrowManagerModule {
 
 }*/
 
-class EscrowManager(private val appContext : Context) {
+class EscrowManager(private val appContext: Context) {
     private var cipherEscrow: EscrowCipher = EscrowCipher(appContext)
 
     private var databaseEscrow = Room.databaseBuilder(
@@ -34,7 +37,7 @@ class EscrowManager(private val appContext : Context) {
     ).build()
 
 
-    suspend fun init(url: URL, onReady : () -> Unit) {
+    suspend fun init(url: URL, onReady: () -> Unit) {
         withContext(Dispatchers.IO) {
             cipherEscrow.init(url)
             cleanUp()
@@ -53,7 +56,7 @@ class EscrowManager(private val appContext : Context) {
         @Volatile
         private var Instance: EscrowManager? = null
 
-        fun getInstance(context : Context) : EscrowManager {
+        fun getInstance(context: Context): EscrowManager {
             return Instance ?: synchronized(this) {
                 return EscrowManager(context).also { Instance = it }
             }
@@ -80,7 +83,7 @@ class EscrowManager(private val appContext : Context) {
 
     }
 
-   suspend fun listExpired(): List<EscrowDbEntry> {
+    suspend fun listExpired(): List<EscrowDbEntry> {
         return databaseEscrow.escrowDbDao().findExpired(ZonedDateTime.now())
     }
 
@@ -119,7 +122,7 @@ class EscrowManager(private val appContext : Context) {
         for (key in cipherEscrow.listKeys()) {
             try {
                 databaseEscrow.escrowDbDao().findById(key)
-            } catch (e : java.lang.Exception) {
+            } catch (e: java.lang.Exception) {
                 cipherEscrow.deleteKey(key)
             }
         }
@@ -127,23 +130,38 @@ class EscrowManager(private val appContext : Context) {
 
     //fun buildEInputStream(fileName: String, uuid: String) : EInputStream {
     //    return EInputStream(fileName, uuid)
-   // }
+    // }
 
     inner class EInputStream(private val fileName: String, private val uuid: String) {
-        lateinit var streamName : String
-        lateinit var token : String
-        lateinit var inputStream : InputStream
+        lateinit var streamName: String
+        lateinit var token: String
+        lateinit var inputStream: InputStream
 
-        suspend fun build ()  : EInputStream {
+        suspend fun build(): EInputStream {
             inputStream = File(appContext.filesDir, fileName).inputStream().let {
                 DataInputStream(it).run {
                     token = readUTF()
                 }
+
+                /*
                 cipherEscrow.setupInputStream(it, uuid).apply {
                     DataInputStream(this).run {
+                        Log.e("READUTF", "Starting read")
                         streamName = readUTF()
+                        Log.e("READUTF", "Ending read")
                     }
                 }
+                */
+
+                CipherInputStream(it, CipherInputStreamProcessor(uuid, cipherEscrow)).run {
+                    DataInputStream(this).run {
+                        Log.e("READUTF", "Starting read")
+                        streamName = readUTF()
+                        Log.e("READUTF", "Ending read")
+                    }
+                    this
+                }
+
             }
             return this
         }
@@ -154,16 +172,18 @@ class EscrowManager(private val appContext : Context) {
     }
 
 
-        //fun buildEOutputStream(fileName: String, uuid: String, streamName : String) : EOutputStream {
+    //fun buildEOutputStream(fileName: String, uuid: String, streamName : String) : EOutputStream {
     //    return EOutputStream(fileName, uuid, streamName)
     //}
 
-    inner class EOutputStream(val filename: String, val uuid: String,
-                              val streamName: String) {
+    inner class EOutputStream(
+        val filename: String, val uuid: String,
+        val streamName: String
+    ) {
 
-        lateinit var outputStream : OutputStream
+        lateinit var outputStream: OutputStream
 
-        suspend fun build () : EOutputStream {
+        suspend fun build(): EOutputStream {
             val token = databaseEscrow.escrowDbDao().findById(uuid).token
 
 
@@ -173,7 +193,20 @@ class EscrowManager(private val appContext : Context) {
                     writeUTF(token)
                     flush()
                 }
-                cipherEscrow.setupOutputStream(it, uuid).apply {
+
+                /*
+            cipherEscrow.setupOutputStream(it, uuid).apply {
+                DataOutputStream(this).run {
+                    writeUTF(streamName)
+                    flush()
+                }
+            }
+*/
+
+                CipherOutputStream(
+                    it,
+                    CipherOutputStreamProcessor(uuid, cipherEscrow)
+                ).apply {
                     DataOutputStream(this).run {
                         writeUTF(streamName)
                         flush()
@@ -183,6 +216,4 @@ class EscrowManager(private val appContext : Context) {
             return this
         }
     }
-
-
 }
