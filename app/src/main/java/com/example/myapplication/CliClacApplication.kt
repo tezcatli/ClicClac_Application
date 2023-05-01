@@ -1,16 +1,23 @@
 package com.example.myapplication
 
 import android.app.Application
+import android.content.Context
 import android.os.StrictMode
-import dagger.hilt.android.HiltAndroidApp
+import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 
-@HiltAndroidApp
 class CliClacApplication: Application() {
-    lateinit var escrowManager : EscrowManager
+    //lateinit var escrowManager : EscrowManager
+
+    lateinit var container: AppContainer
+
+    //val dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
     override fun onCreate() {
 
-
+/*
         StrictMode.setVmPolicy(
             StrictMode.VmPolicy.Builder()
                 .detectLeakedSqlLiteObjects()
@@ -18,7 +25,15 @@ class CliClacApplication: Application() {
                 .penaltyLog()
                 .build()
         )
+
+ */
+        container = AppDataContainer(this)
+
         super.onCreate()
+
 
     }
 }
+
+
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")

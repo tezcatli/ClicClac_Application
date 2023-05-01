@@ -55,11 +55,17 @@ interface EscrowDbDao {
     @Query("SELECT * FROM EscrowDbEntry WHERE deadline < (:deadline)")
     fun findExpiredF(deadline: ZonedDateTime): Flow<List<EscrowDbEntry>>
 
-    @Query("SELECT * FROM EscrowDbEntry WHERE deadline >= (:deadline)")
+    @Query("SELECT * FROM EscrowDbEntry WHERE deadline >= (:deadline) ORDER by deadline")
     suspend fun findPending(deadline: ZonedDateTime): List<EscrowDbEntry>
 
-    @Query("SELECT * FROM EscrowDbEntry WHERE deadline >= (:deadline)")
+    @Query("SELECT * FROM EscrowDbEntry WHERE deadline >= (:deadline) ORDER by deadline")
     fun findPendingF(deadline: ZonedDateTime): Flow<List<EscrowDbEntry>>
+
+    @Query("SELECT * FROM EscrowDbEntry ORDER by deadline")
+    suspend fun findAll(): List<EscrowDbEntry>
+
+    @Query("SELECT * FROM EscrowDbEntry ORDER by deadline")
+    fun findAllF(): Flow<List<EscrowDbEntry>>
 
     @Insert
     suspend fun insertAll(vararg users: EscrowDbEntry)

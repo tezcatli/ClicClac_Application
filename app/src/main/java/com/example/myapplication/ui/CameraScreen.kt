@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myapplication.AppViewModelProvider
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -43,7 +44,7 @@ import kotlin.coroutines.suspendCoroutine
 
 @Composable
 fun CameraScreen(
-    viewModel: CameraViewModel = viewModel(factory = CameraViewModel.Factory),
+    viewModel: CameraViewModel = viewModel(factory = AppViewModelProvider.Factory),
     onConfig: () -> Unit
 //    onCapture: (ImageCapture) -> Unit,
 ) {

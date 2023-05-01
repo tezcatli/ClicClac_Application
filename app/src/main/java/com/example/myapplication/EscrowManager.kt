@@ -2,26 +2,17 @@ package com.example.myapplication
 
 import android.content.Context
 import androidx.room.Room
-import androidx.test.core.app.ActivityScenario.launch
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.*
 import java.net.URL
 import java.time.ZonedDateTime
 import java.util.*
 import javax.crypto.SecretKey
-import javax.inject.Singleton
 
 
+/*
 @Module
 @InstallIn(SingletonComponent::class)
 object EscrowManagerModule {
@@ -32,7 +23,7 @@ object EscrowManagerModule {
         return EscrowManager(context)
     }
 
-}
+}*/
 
 class EscrowManager(private val appContext : Context) {
     private var cipherEscrow: EscrowCipher = EscrowCipher(appContext)
@@ -64,11 +55,9 @@ class EscrowManager(private val appContext : Context) {
 
         fun getInstance(context : Context) : EscrowManager {
             return Instance ?: synchronized(this) {
-                return getInstance(context).also { Instance = it }
+                return EscrowManager(context).also { Instance = it }
             }
         }
-
-
 
     }
 
@@ -105,6 +94,15 @@ class EscrowManager(private val appContext : Context) {
 
     fun listPendingF(): Flow<List<EscrowDbEntry>> {
         return databaseEscrow.escrowDbDao().findPendingF(ZonedDateTime.now())
+    }
+
+
+    suspend fun listAll(): List<EscrowDbEntry> {
+        return databaseEscrow.escrowDbDao().findAll()
+    }
+
+    fun listAllF(): Flow<List<EscrowDbEntry>> {
+        return databaseEscrow.escrowDbDao().findAllF()
     }
 
     suspend fun recover(uuid: String): SecretKey {
@@ -151,7 +149,12 @@ class EscrowManager(private val appContext : Context) {
         }
     }
 
-    //fun buildEOutputStream(fileName: String, uuid: String, streamName : String) : EOutputStream {
+    fun deleteFile(fileName: String) {
+        File(appContext.filesDir, fileName).delete()
+    }
+
+
+        //fun buildEOutputStream(fileName: String, uuid: String, streamName : String) : EOutputStream {
     //    return EOutputStream(fileName, uuid, streamName)
     //}
 
