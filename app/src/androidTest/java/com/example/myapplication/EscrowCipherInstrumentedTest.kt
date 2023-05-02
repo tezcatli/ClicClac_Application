@@ -168,14 +168,16 @@ class EscrowCipherInstrumentedTest {
         )
 
         for (testVector in listOf<ByteArray>(
-            ByteArray(14),
-            ByteArray(1024*128),
-            ByteArray(1024*128*2),
-            ByteArray(568721),
-            ByteArray(2644004))) {
+
+            ByteArray(14){ (0..255).random().toByte() },
+            ByteArray(1024*128) { (0..255).random().toByte() },
+            ByteArray(1024*128*2) { (0..255).random().toByte() },
+            ByteArray(568721) { (0..255).random().toByte() },
+            ByteArray(2644004) { (0..255).random().toByte() }
+        )) {
             val outputStream = File(appContext.filesDir, "testFile").outputStream()
             val outputStreamProcessor = CipherOutputStreamProcessor(uuid, cipherEscrow)
-            val cipherOutputStream = CipherOutputStream(outputStream, outputStreamProcessor)
+            val cipherOutputStream = CipherOutputStream(outputStream, outputStreamProcessor, 98751)
             cipherOutputStream.write(testVector)
             cipherOutputStream.close()
 

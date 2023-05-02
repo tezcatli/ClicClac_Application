@@ -17,7 +17,7 @@ class CliClacApplication: Application() {
 
     override fun onCreate() {
 
-/*
+
         StrictMode.setVmPolicy(
             StrictMode.VmPolicy.Builder()
                 .detectLeakedSqlLiteObjects()
@@ -26,7 +26,7 @@ class CliClacApplication: Application() {
                 .build()
         )
 
- */
+
         container = AppDataContainer(this)
 
         super.onCreate()

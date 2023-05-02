@@ -2,17 +2,14 @@ package com.example.myapplication.ui
 
 import android.content.ContentResolver
 import android.content.ContentValues
-import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
-import android.util.Size
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.core.graphics.decodeBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.EscrowDbEntry
@@ -40,39 +37,43 @@ class PhotosViewModel(
     private suspend fun recoverPhoto(
         uuid: String
     ): Uri? {
+
+        var uri : Uri? = null
         try {
             val istream = escrowManager.EInputStream(uuid, uuid).build()
 
-            val pictureDetails = ContentValues().apply {
+            istream.inputStream.use {
 
-                put(MediaStore.Images.Media.DISPLAY_NAME, istream.streamName)
-                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_DCIM)
+                val pictureDetails = ContentValues().apply {
 
+                    put(MediaStore.Images.Media.DISPLAY_NAME, istream.streamName)
+                    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                    put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_DCIM)
+
+                }
+
+                uri = contentResolver.insert(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    pictureDetails
+                )
+
+                contentResolver.openOutputStream(uri!!).use {
+                    val buf = ByteArray(8192)
+                    var length: Int
+                    while (istream.inputStream.read(buf).also { length = it } > 0) {
+                        it?.write(buf, 0, length)
+                    }
+                }
             }
 
-            val uri = contentResolver.insert(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                pictureDetails
-            )
-
-            val imageOutStream = contentResolver.openOutputStream(uri!!)
-
-            val buf = ByteArray(8192)
-            var length: Int
-            while (istream.inputStream.read(buf).also { length = it } > 0) {
-                imageOutStream?.write(buf, 0, length)
-            }
-
-            imageOutStream?.close()
-            istream.inputStream.close()
+        } catch (e: Exception) {
+            Log.e("PHOTOSCREEN", "Exception caught:" ,e)
+            return null
+        } finally {
             escrowManager.delete(uuid)
             escrowManager.deleteFile(uuid)
-
-            return (uri)
-        } catch (e: Exception) {
-            return null
         }
+        return (uri)
     }
 
 
@@ -82,9 +83,10 @@ class PhotosViewModel(
                 expiredList = escrowManager.listExpiredF().filterNotNull().first()
             }.join()
             val truc = expiredList.asFlow().map{recoverPhoto(it.UUID)}.flowOn(Dispatchers.IO).collect() {
-                Log.e("PHOTOSCREEN", "Loading bitmap at URL $it")
 
                 if (it != null) {
+                    Log.e("PHOTOSCREEN", "Loading bitmap at URL $it")
+
                     val source = ImageDecoder.createSource(contentResolver, it)
                     imageBitmapList.add(
                         ImageDecoder.decodeBitmap(source).asImageBitmap()

@@ -23,20 +23,23 @@ import java.io.OutputStream
 
  */
 
-data class ChunkHeader (
-    var contentSize : Int = 0,
-    var ivSize : Int = 0,
+data class ChunkHeader(
+    var contentSize: Int = 0,
+    var ivSize: Int = 0,
 //    var tagSize : Int = 0,
-    var iv : ByteArray = ByteArray(0)
+    var iv: ByteArray = ByteArray(0)
 )
 
 
-class CipherInputStream(private val inputStream: InputStream, val inputStreamProcessor : CipherInputStreamProcessor) : InputStream() {
+class CipherInputStream(
+    private val inputStream: InputStream,
+    val inputStreamProcessor: CipherInputStreamProcessor
+) : InputStream() {
 
     var cipheredBuffer = ByteArray(0)
     var chunkBuffer = ByteArray(0)
-    var chunkOffset : Int = 0
-    var chunkHeader : ChunkHeader = ChunkHeader()
+    var chunkOffset: Int = 0
+    var chunkHeader: ChunkHeader = ChunkHeader()
 
     public override fun read(): Int {
         val tmp = ByteArray(1)
@@ -47,7 +50,7 @@ class CipherInputStream(private val inputStream: InputStream, val inputStreamPro
             tmp[0].toInt()
     }
 
-    private fun readNBytes(buffer : ByteArray) {
+    private fun readNBytes(buffer: ByteArray) {
         for (i in buffer.indices) {
             val byte = inputStream.read()
             if (byte == -1) {
@@ -57,28 +60,29 @@ class CipherInputStream(private val inputStream: InputStream, val inputStreamPro
         }
     }
 
-    private fun readInt() : Int {
-        val buffer  = ByteArray(4)
+    private fun readInt(): Int {
+        val buffer = ByteArray(4)
         readNBytes(buffer)
         return NumberSerializers.byteArrayToNumber(buffer).toInt()
     }
 
-    fun readNewChunk() : Int {
+    fun readNewChunk(): Int {
 
         chunkOffset = 0
 
         try {
             chunkHeader.ivSize = readInt()
-        } catch (e : IOException) {
+        } catch (e: IOException) {
             return -1;
         }
- //       chunkHeader.tagSize = readInt()
-        chunkHeader.iv = ByteArray( chunkHeader.ivSize)
+        //       chunkHeader.tagSize = readInt()
+        chunkHeader.iv = ByteArray(chunkHeader.ivSize)
         readNBytes(chunkHeader.iv)
         chunkHeader.contentSize = readInt()
 
         if (chunkBuffer.size < chunkHeader.contentSize) {
-            cipheredBuffer = ByteArray(chunkHeader.contentSize + inputStreamProcessor.getByteOverhead())
+            cipheredBuffer =
+                ByteArray(chunkHeader.contentSize + inputStreamProcessor.getByteOverhead())
             chunkBuffer = ByteArray(chunkHeader.contentSize)
         }
 
@@ -86,7 +90,11 @@ class CipherInputStream(private val inputStream: InputStream, val inputStreamPro
 
         while (chunkReadSize != chunkHeader.contentSize) {
 //            val tmpChunkBuffer = ByteArray(chunkHeader.contentSize - chunkReadSize)
-            val res = inputStream.read(cipheredBuffer, chunkReadSize, chunkHeader.contentSize - chunkReadSize)
+            val res = inputStream.read(
+                cipheredBuffer,
+                chunkReadSize,
+                chunkHeader.contentSize - chunkReadSize
+            )
             if (res == -1) {
                 throw Exception(IOException("Unexpected end of stream"))
             }
@@ -97,7 +105,11 @@ class CipherInputStream(private val inputStream: InputStream, val inputStreamPro
         inputStream.read(cipheredBuffer, chunkReadSize, inputStreamProcessor.getByteOverhead())
 
         inputStreamProcessor.setUp(chunkHeader.iv)
-        inputStreamProcessor.decrypt(cipheredBuffer, chunkReadSize + inputStreamProcessor.getByteOverhead(), chunkBuffer)
+        inputStreamProcessor.decrypt(
+            cipheredBuffer,
+            chunkReadSize + inputStreamProcessor.getByteOverhead(),
+            chunkBuffer
+        )
 
         return chunkReadSize
     }
@@ -107,11 +119,49 @@ class CipherInputStream(private val inputStream: InputStream, val inputStreamPro
             throw Exception("Null buffer received")
         }
 
-        if (chunkOffset == chunkHeader.contentSize) {
-            if (readNewChunk() == -1)
-                return -1
+        var off2: Int = off
+        var read: Int = 0
+
+
+
+        while (read != len) {
+
+            if (chunkOffset == chunkHeader.contentSize) {
+                if (readNewChunk() == -1)
+                    if (read != 0) {
+                        chunkOffset = 0
+                        chunkHeader.contentSize = 0
+                        return read
+                    } else
+                        return -1
+            }
+
+            if ((len - read) >= (chunkHeader.contentSize - chunkOffset)) {
+                chunkBuffer.copyInto(buffer, off2, chunkOffset, chunkHeader.contentSize)
+                off2 += chunkHeader.contentSize - chunkOffset
+                read += chunkHeader.contentSize - chunkOffset
+                chunkOffset += chunkHeader.contentSize - chunkOffset
+            } else {
+
+                /*
+                chunkOffset = srcPos = 0
+                off2 = dstPos = 8160
+                len = length = 8192
+                 */
+                try {
+                    chunkBuffer.copyInto(buffer, off2, chunkOffset, chunkOffset + len - read)
+                } catch (e: Exception) {
+                    throw (e)
+                }
+                chunkOffset += len - read
+                off2 += len - read
+                read += len - read
+            }
         }
 
+        return read
+
+        /*
         if (len >= (chunkHeader.contentSize - chunkOffset)) {
             chunkBuffer.copyInto(buffer, off, chunkOffset, chunkHeader.contentSize)
             val read = chunkHeader.contentSize - chunkOffset
@@ -122,6 +172,8 @@ class CipherInputStream(private val inputStream: InputStream, val inputStreamPro
             chunkOffset += len
             return len
         }
+        */
+
     }
 
     public override fun read(buffer: ByteArray?): Int {
@@ -139,7 +191,11 @@ class CipherInputStream(private val inputStream: InputStream, val inputStreamPro
 }
 
 
-class CipherOutputStream(private val outputStream: OutputStream, private val outputStreamProcessor : CipherOutputStreamProcessor, val chunkSize : Int = 1024*128) : OutputStream() {
+class CipherOutputStream(
+    private val outputStream: OutputStream,
+    private val outputStreamProcessor: CipherOutputStreamProcessor,
+    val chunkSize: Int = 1024 * 128
+) : OutputStream() {
 
     var plainBuffer = ByteArray(chunkSize)
     var cipherBuffer = ByteArray(chunkSize + outputStreamProcessor.getByteOverhead())
@@ -153,7 +209,7 @@ class CipherOutputStream(private val outputStream: OutputStream, private val out
         outputStream.write(buffer)
     }
 
-    private fun writeNBytes(buffer: ByteArray, offset : Int, len : Int) {
+    private fun writeNBytes(buffer: ByteArray, offset: Int, len: Int) {
         outputStream.write(buffer, offset, len)
     }
 
@@ -178,7 +234,7 @@ class CipherOutputStream(private val outputStream: OutputStream, private val out
 
         outputStreamProcessor.encrypt(plainBuffer, size, cipherBuffer)
 
-        writeNBytes(cipherBuffer , 0, size + outputStreamProcessor.getByteOverhead())
+        writeNBytes(cipherBuffer, 0, size + outputStreamProcessor.getByteOverhead())
 
     }
 
@@ -200,7 +256,12 @@ class CipherOutputStream(private val outputStream: OutputStream, private val out
             } else {
                 // if not enough size available in plainBuffer
                 // fill plainBuffer, write current chunk and emit a new one
-                buffer.copyInto(plainBuffer, plainBufferOffset, off2, off2 + chunkSize - plainBufferOffset)
+                buffer.copyInto(
+                    plainBuffer,
+                    plainBufferOffset,
+                    off2,
+                    off2 + chunkSize - plainBufferOffset
+                )
                 off2 += chunkSize - plainBufferOffset
                 written += chunkSize - plainBufferOffset
                 writeChunk(chunkSize)
