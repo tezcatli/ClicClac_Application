@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 
 class PhotosViewModel(
     private val escrowManager: EscrowManager,
-    private val contentResolver: ContentResolver
+    val contentResolver: ContentResolver
 ) : ViewModel() {
 
     private var expiredList: List<EscrowDbEntry> = listOf()
@@ -33,6 +33,8 @@ class PhotosViewModel(
     //val bitmapList : MutableList<Bitmap> =  mutableListOf()
 
     val imageBitmapList = mutableStateListOf<ImageBitmap>()
+
+    val imageUriList = mutableStateListOf<Uri>()
 
     private suspend fun recoverPhoto(
         uuid: String
@@ -79,14 +81,15 @@ class PhotosViewModel(
 
     init {
         viewModelScope.launch {
-            viewModelScope.launch {
-                expiredList = escrowManager.listExpiredF().filterNotNull().first()
-            }.join()
+            expiredList = escrowManager.listExpiredF().filterNotNull().first()
             expiredList.asFlow().map { recoverPhoto(it.UUID) }.flowOn(Dispatchers.IO).collect() {
 
                 if (it != null) {
                     Log.d("CLICLAC", "Loading bitmap at URL $it")
 
+                    imageUriList.add(it)
+
+                    /*
                     val source = ImageDecoder.createSource(contentResolver, it)
 
                     try {
@@ -94,6 +97,7 @@ class PhotosViewModel(
                     } catch (e: Exception) {
                         Log.e("CLICLAC", "Exception caught wile decoding image: ", e)
                     }
+                    */
                 }
             }
         }

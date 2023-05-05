@@ -1,5 +1,7 @@
 package com.tezcatli.clicclac.ui
 
+import android.provider.BlockedNumberContract.BlockedNumbers
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,10 +12,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -21,6 +32,18 @@ import com.tezcatli.clicclac.AppViewModelProvider
 import java.time.Duration
 import java.time.ZonedDateTime
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.seconds
+
+/*
+data class Bucket(
+    var list: MutableList<Duration> = mutableListOf()
+)
+*/
+
+
+
 
 
 @Composable
@@ -29,11 +52,86 @@ fun EscrowedList(
     viewModel: EscrowedListViewModel = viewModel(factory = AppViewModelProvider.Factory),
     onClickExpired: () -> Unit = {}
 ) {
-    val listAllState by viewModel.listAllState.collectAsState()
+    Log.e("CLICCLAC", "RECOMPOSE ESCROWED LIST ")
 
-    EscrowedList2(modifier, viewModel.expiredNumber, listAllState, onClickExpired)
 
+
+    Column {
+        val expired = viewModel.listBucket[0]!!.size != 0
+
+        OutlinedCard(
+            modifier = modifier
+                .padding(horizontal = 20.dp, vertical = 5.dp)
+                .clickable() {
+                    if (expired) {
+                        onClickExpired()
+                    }
+                },
+            colors = CardDefaults.run {
+                if (expired) {
+                    cardColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                } else cardColors()
+            }
+        ) {
+            Row(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(all = 20.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    textAlign = TextAlign.Center,
+                    text = if (expired) {
+                        String.format("%s %s\nClick to develop", viewModel.listBucket[0]!!.size.toString(), viewModel.bucketsDef[0].slotName)
+                    } else {
+                        viewModel.nextEscrow.toComponents() { days, hours, minutes, seconds, _ ->
+                            String.format("Next photo in\n%02dd %02dh %02dm %02ds",days, hours, minutes, seconds)
+                        }
+                    }
+                )
+            }
+        }
+
+
+        LazyColumn(modifier = modifier) {
+            itemsIndexed(viewModel.listBucket) { index, el ->
+                if (index != 0 && viewModel.listBucket[index]!!.size != 0) {
+                    OutlinedCard(
+                        modifier = modifier
+                            .padding(horizontal = 20.dp, vertical = 5.dp)
+                    ) {
+                        Row(
+                            modifier = modifier
+                                .fillMaxWidth()
+                                .padding(all = 20.dp),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = viewModel.listBucket[index]!!.size.toString() + " photos in " + viewModel.bucketsDef[index].slotName
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        /*
+        Text(
+            text = viewModel.tmpList.size.toString()
+        )
+        for (i in 0 until viewModel.bucketsDef.size) {
+
+            Text(
+                text = "Bucket number : " + viewModel.listBucket[i]!!.size + " " + viewModel.bucketsDef[i].slotName,
+                fontSize = 15.sp
+            )
+        }
+        */
+    }
 }
+
 
 @Composable
 fun EscrowedList2(
@@ -46,6 +144,17 @@ fun EscrowedList2(
     //val pendingListState by viewModel.pendingListState.collectAsState()
     //val expiredListState by viewModel.expiredListState.collectAsState()
     Column {
+        var ticks by remember { mutableStateOf(0) }
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(1.seconds)
+                ticks++
+            }
+        }
+        Text(
+            text = "Countdown: $ticks",
+            fontSize = 15.sp
+        )
         OutlinedCard(
             modifier = modifier
                 .padding(horizontal = 20.dp, vertical = 5.dp)

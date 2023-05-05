@@ -1,6 +1,10 @@
 package com.tezcatli.clicclac.ui
 
 import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
@@ -15,13 +19,21 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.modifier.modifierLocalConsumer
+import androidx.compose.ui.text.style.TextAlign
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import org.intellij.lang.annotations.JdkConstants.HorizontalAlignment
 
 interface NavigationDestination {
     /**
@@ -41,50 +53,48 @@ interface NavigationDestination {
 fun ClicClacApp(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
+    viewModel: ClicClaAppViewModel = ClicClaAppViewModel()
 ) {
-    //val pendingListState by viewModel.pendingListState.collectAsState()
-    //val expiredListState by viewModel.expiredListState.collectAsState()
-    //val listAllState by viewModel.listAllState.collectAsState()
+    var fullScreen by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
+
+
             if (navBackStackEntry?.destination != null) {
                 Log.e("ZOGZOG--->", currentDestination?.route!!)
             }
-            if (currentDestination?.route != "camera") {
+
+
+
+            fullScreen = when {
+                viewModel.fullScreen -> true
+                currentDestination?.route == "camera" -> true
+                else -> false
+            }
+
+
+            Log.e("CLICCLAC", currentDestination?.route.toString() + " " + viewModel.fullScreen)
+
+            if (!fullScreen) {
                 TopAppBar(
-                    title = { Text("Clic Clac") },
-                    /*
-                    navigationIcon = {
-                        IconButton(onClick = {}) {
-                            Icon(Icons.Filled.Menu, null)
+                    title = {
+                        Row(horizontalArrangement = Arrangement.Center) {
+                            Text(
+                                textAlign = TextAlign.Center,
+                                text = "Clic Clac"
+                            )
                         }
                     },
-                    actions = {
-                        BadgedBox(badge = { Badge { Text(expiredListState.itemList.size.toString()) } }) {
-                            IconButton(onClick = {}) {
-                                Icon(Icons.Filled.Mail, null)
-                            }
-                        }
-                        BadgedBox(badge = { Badge { Text(pendingListState.itemList.size.toString()) } }) {
-                            IconButton(onClick = {}) {
-                                Icon(Icons.Filled.HourglassBottom, null)
-                            }
-                        }
-                        IconButton(onClick = { navController.navigate("camera") }) {
-                            Icon(Icons.Filled.ArrowBack, null)
-                        }
-                    }
-                    */
                 )
             }
         },
         bottomBar = {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
-            if (currentDestination?.route != "camera") {
+            if (!fullScreen) {
                 NavigationBar() {
                     NavigationBarItem(
                         selected = currentDestination?.hierarchy?.any { it.route == "config" } == true,
@@ -120,7 +130,7 @@ fun ClicClacApp(
             }
             composable(route = "config") {
                 ConfigScreen(
-                    onCassetteClick =  { navController.navigate("configCassette") }
+                    onCassetteClick = { navController.navigate("configCassette") }
 //                onCapture = {}
                 )
             }
@@ -132,6 +142,8 @@ fun ClicClacApp(
             }
             composable(route = "photo") {
                 PhotosScreen(
+                    appViewModel = viewModel,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }

@@ -1,6 +1,7 @@
 package com.tezcatli.clicclac
 
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -10,6 +11,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.tezcatli.clicclac.ui.ClicClacApp
+import com.tezcatli.clicclac.ui.theme.ClicClacTheme
 import kotlinx.coroutines.launch
 import java.net.URL
 
@@ -36,7 +38,9 @@ class MainActivity : ComponentActivity() {
     private fun onReady() {
         setContent {
             //(application as CliClacApplication).container.escrowManager = escrowManager
-            ClicClacApp()
+            ClicClacTheme {
+                ClicClacApp()
+            }
         }
     }
 

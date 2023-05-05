@@ -38,14 +38,15 @@ fun ConfigScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConfigScreen2(
-    modifier: Modifier = Modifier.fillMaxWidth(),
+    modifier: Modifier = Modifier,
     onCassetteClick: () -> Unit = {},
     cassetteDevelopmentDelay: String = ""
 ) {
     //var textValue by remember { mutableStateOf("") }
 
     OutlinedCard(
-        modifier = modifier.padding(all = 5.dp)
+        modifier = modifier.fillMaxWidth().padding(all = 5.dp)
+            .clickable(enabled = true) { onCassetteClick() }
     ) {
         Column(
             modifier = modifier.padding(all = 10.dp)
@@ -63,7 +64,6 @@ fun ConfigScreen2(
             }
 
             Text(
-                modifier = Modifier.clickable(enabled = true) { onCassetteClick() },
                 text = "Development delay: $cassetteDevelopmentDelay"
             )
         }

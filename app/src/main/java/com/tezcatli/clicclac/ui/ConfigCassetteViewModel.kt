@@ -37,10 +37,8 @@ class ConfigCassetteViewModel(
 
     init {
         viewModelScope.launch {
-            viewModelScope.launch {
-                cassetteDevelopmentDelayChange =
+            cassetteDevelopmentDelayChange =
                     settingsRepository.getCassetteDevelopmentDelayF().filterNotNull().first()
-            }.join()
             cassetteDevelopmentDelayValid = TimeHelpers.stringToDuration(cassetteDevelopmentDelayChange) != 0.hours
         }
     }

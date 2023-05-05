@@ -16,9 +16,9 @@ class TimeHelpers {
             var duration = 0.hours
 
 
-            val split = deadline.split(" ")
+            val split = deadline.trim().split("\\s+".toRegex())
 
-            if ((split.size % 2) != 0) {
+            if (split[0] == "" || (split.size % 2) != 0) {
                 return 0.hours
             }
 
