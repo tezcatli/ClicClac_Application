@@ -17,6 +17,7 @@ interface AppContainer {
     val dataStore : DataStore<Preferences>
     val settingsRepository : SettingsRepository
     val mainExecutor : Executor
+    val appContext : Context
 }
 
 /**
@@ -35,6 +36,9 @@ class AppDataContainer(private val context: Context) : AppContainer {
 
     override val mainExecutor: Executor
         get() = context.mainExecutor
+
+    override val appContext: Context
+        get() = context
 
     override val settingsRepository: SettingsRepository by lazy {
         SettingsRepository.getInstance(context.dataStore)

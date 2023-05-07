@@ -86,8 +86,21 @@ fun EscrowedList(
                     text = if (expired) {
                         String.format("%s %s\nClick to develop", viewModel.listBucket[0]!!.size.toString(), viewModel.bucketsDef[0].slotName)
                     } else {
-                        viewModel.nextEscrow.toComponents() { days, hours, minutes, seconds, _ ->
-                            String.format("Next photo in\n%02dd %02dh %02dm %02ds",days, hours, minutes, seconds)
+                        if (viewModel.listBucket.map {
+                            it -> it.size
+                            }.sum() != 0) {
+
+                            viewModel.nextEscrow.toComponents() { days, hours, minutes, seconds, _ ->
+                                String.format(
+                                    "Next photo in\n%02dd %02dh %02dm %02ds",
+                                    days,
+                                    hours,
+                                    minutes,
+                                    seconds
+                                )
+                            }
+                        } else {
+                            String.format("No photo submitted for development\n Press the camera icon on the bottom right of the screen to take pictures")
                         }
                     }
                 )
@@ -117,18 +130,6 @@ fun EscrowedList(
             }
         }
 
-        /*
-        Text(
-            text = viewModel.tmpList.size.toString()
-        )
-        for (i in 0 until viewModel.bucketsDef.size) {
-
-            Text(
-                text = "Bucket number : " + viewModel.listBucket[i]!!.size + " " + viewModel.bucketsDef[i].slotName,
-                fontSize = 15.sp
-            )
-        }
-        */
     }
 }
 

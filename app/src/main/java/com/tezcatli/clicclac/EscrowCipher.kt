@@ -517,17 +517,31 @@ fun hex(bytes: ByteArray, len: Int = bytes.size): String? {
 class CipherInputStreamProcessor(val uuid: String, val escrowCipher: EscrowCipher) {
 
     val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-    fun setUp(iv: ByteArray) {
+
+    var key : SecretKey? = null
+
+
+    fun init() {
+        key = escrowCipher.getsKeyDec(uuid)
+    }
+    fun setUpBlock(iv: ByteArray) {
         val spec = GCMParameterSpec(128, iv.copyOf())
 
-        cipher.init(Cipher.DECRYPT_MODE, escrowCipher.getsKeyDec(uuid), spec)
+        cipher.init(Cipher.DECRYPT_MODE, key, spec)
 
         //Log.e("CIPHER_INPUT_STREAM", "IV = " + hex(iv)!!)
     }
 
     fun decrypt(ciphered: ByteArray, len: Int, plain: ByteArray) {
         //Log.e("CIPHER_INPUT_STREAM", "PAYLOAD = " + hex(ciphered, len)!!)
-        cipher.doFinal(ciphered, 0, len, plain)
+        val res = cipher.doFinal(ciphered, 0, len, plain)
+//        Log.e("CLICCLAC", "decrypt len = $len, returnLen = $res")
+//        if (plain[len-50] == 0xbb.toByte() &&
+//            plain[len-40] == 0xbb.toByte() &&
+//            plain[len-30] == 0xbb.toByte() &&
+//            plain[len-20] == 0xbb.toByte()) {
+//            Log.e("CLICCLAC", "last 4 bytes null (v2)")
+//        }
     }
 
 
@@ -540,9 +554,16 @@ class CipherInputStreamProcessor(val uuid: String, val escrowCipher: EscrowCiphe
 class CipherOutputStreamProcessor(val uuid: String, val escrowCipher: EscrowCipher) {
     val cipher = Cipher.getInstance("AES/GCM/NoPadding")
 
+    var key : SecretKey? = null
+
+
+    fun init() {
+        key = escrowCipher.getsKeyEnc(uuid)
+    }
+
     // return IV
     fun setUp(): ByteArray {
-        cipher.init(Cipher.ENCRYPT_MODE, escrowCipher.getsKeyEnc(uuid))
+        cipher.init(Cipher.ENCRYPT_MODE, key)
         //Log.e("CIPHER_OUTPUT_STREAM", "IV = " + hex(cipher.iv.copyOf())!!)
 
         return cipher.iv.copyOf()

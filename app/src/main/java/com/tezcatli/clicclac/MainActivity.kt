@@ -51,9 +51,11 @@ class MainActivity : ComponentActivity() {
             Log.i("kilo", "Permission granted")
         } else {
             Log.i("kilo", "Permission denied")
-            requestCameraPermission()
+            //requestCameraPermission()
         }
     }
+
+
 
 
     private fun requestCameraPermission() {
@@ -76,17 +78,17 @@ class MainActivity : ComponentActivity() {
         when {
             ContextCompat.checkSelfPermission(
                 this,
-                android.Manifest.permission.CAMERA
+                android.Manifest.permission.WRITE_EXTERNAL_STORAGE
             ) == PackageManager.PERMISSION_GRANTED -> {
                 Log.i("kilo", "Permission previously granted")
             }
 
             ActivityCompat.shouldShowRequestPermissionRationale(
                 this,
-                android.Manifest.permission.CAMERA
+                android.Manifest.permission.WRITE_EXTERNAL_STORAGE
             ) -> Log.i("kilo", "Show camera permissions dialog")
 
-            else -> requestPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+            else -> requestPermissionLauncher.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
         }
     }
 }

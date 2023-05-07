@@ -1,5 +1,5 @@
-@file:OptIn(ExperimentalStdlibApi::class, ExperimentalStdlibApi::class,
-    ExperimentalStdlibApi::class
+@file:OptIn(
+    ExperimentalStdlibApi::class,
 )
 
 package com.tezcatli.clicclac.ui
@@ -14,7 +14,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tezcatli.clicclac.EscrowDbEntry
 import com.tezcatli.clicclac.EscrowManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -38,11 +37,6 @@ data class EscrowedState(
 )
 
 
-fun EscrowedStateFromDb(db: EscrowDbEntry): EscrowedState {
-    return EscrowedState(uuid = db.UUID, deadline = db.deadline)
-}
-
-
 data class BucketsDef(
     val range: OpenEndRange<Duration>,
     val slotName: String,
@@ -60,39 +54,39 @@ class EscrowedListViewModel(
     private val contentResolver: ContentResolver
 ) : ViewModel() {
 
-    public val bucketsDef = listOf(
+    val bucketsDef = listOf(
         BucketsDef(
             (-Duration.INFINITE).rangeUntil(Duration.ZERO),
             "ready to develop",
-            { _ -> listOf<String>("Ready", "") }),
+            { listOf("Ready", "") }),
         BucketsDef(
             0.seconds.rangeUntil(1.minutes),
             "in less than 1 minute",
-            { t -> listOf<String>(t.inWholeSeconds.toString(), "Seconds") }),
+            { t -> listOf(t.inWholeSeconds.toString(), "Seconds") }),
         BucketsDef(
             1.minutes.rangeUntil(10.minutes),
             "in less than 10 minute",
-            { t -> listOf<String>(t.inWholeSeconds.toString(), "Seconds") }),
+            { t -> listOf(t.inWholeSeconds.toString(), "Seconds") }),
         BucketsDef(
             10.minutes.rangeUntil(1.hours),
             "in less than 1 hour",
-            { t -> listOf<String>(t.inWholeMinutes.toString(), "Minutes") }),
+            { t -> listOf(t.inWholeMinutes.toString(), "Minutes") }),
         BucketsDef(
             1.hours.rangeUntil(4.hours),
             "in less than 4 hours",
-            { t -> listOf<String>(t.inWholeMinutes.toString(), "Minutes") }),
+            { t -> listOf(t.inWholeMinutes.toString(), "Minutes") }),
         BucketsDef(
             4.hours.rangeUntil(1.days),
             "in less than 1 day",
-            { t -> listOf<String>(t.inWholeHours.toString(), "Hours") }),
+            { t -> listOf(t.inWholeHours.toString(), "Hours") }),
         BucketsDef(
             1.days.rangeUntil(7.days),
             "in less than 1 week",
-            { t -> listOf<String>(t.inWholeHours.toString(), "Hours") }),
+            { t -> listOf(t.inWholeHours.toString(), "Hours") }),
         BucketsDef(
             7.days.rangeUntil(Duration.INFINITE),
             "in coming weeks",
-            { t -> listOf<String>(t.inWholeDays.toString(), "Days") })
+            { t -> listOf(t.inWholeDays.toString(), "Days") })
     )
 
 
@@ -113,13 +107,13 @@ class EscrowedListViewModel(
         list.forEach {
             val timeDiff = ChronoUnit.MILLIS.between(currentTime, it.toInstant()).milliseconds
 
-     //       Log.e("CLICCLAC", "Adding $timeDiff to bucket id " + bucketId(timeDiff))
-            listBucket[bucketId(timeDiff)]!!.add(timeDiff)
+            //       Log.e("CLICCLAC", "Adding $timeDiff to bucket id " + bucketId(timeDiff))
+            listBucket[bucketId(timeDiff)].add(timeDiff)
         }
     }
 
-    fun bucketId(timeDiff: Duration): Int {
-        bucketsDef.forEachIndexed() { index, bucketDef ->
+    private fun bucketId(timeDiff: Duration): Int {
+        bucketsDef.forEachIndexed { index, bucketDef ->
             // if (bucketDef.slot(timeDiff)) {
             if (timeDiff in bucketDef.range) {
                 return index
@@ -129,7 +123,7 @@ class EscrowedListViewModel(
     }
 
     init {
-        bucketsDef.forEach() { _ ->
+        bucketsDef.forEach { _ ->
             listBucket.add(mutableStateListOf())
         }
 
@@ -138,56 +132,51 @@ class EscrowedListViewModel(
             var job: Job = viewModelScope.launch {}
             job.cancelAndJoin()
             escrowManager.listAllF().filterNotNull()
-                .collect() {
+                .collect {
                     if (job.isActive) {
                         job.cancelAndJoin()
                     }
-       //             val truc = coroutineContext.job.children.toList().size
+                    //             val truc = coroutineContext.job.children.toList().size
                     job = viewModelScope.launch {
                         Log.e("CLICCLAC", "RECEIVING listAllF ")
                         //               tmpList.add(0)
-                        var deadLineList = mutableListOf<Duration>()
+                        val deadLineList = mutableListOf<Duration>()
 
                         while (true) {
 
                             deadLineList.clear()
                             if (it.isNotEmpty()) {
-                                nextEscrow =  ChronoUnit.MILLIS.between(ZonedDateTime.now(),
-                                    it[0].deadline).milliseconds
+                                nextEscrow = ChronoUnit.MILLIS.between(
+                                    ZonedDateTime.now(),
+                                    it[0].deadline
+                                ).milliseconds
                             }
 
-                            bucketize(it.map { it -> it.deadline })
+                            bucketize(it.map { it.deadline })
 
-                            listBucket.forEachIndexed() { index, it ->
+                            listBucket.forEachIndexed { index, it ->
                                 if (index != 0 && it.isNotEmpty()) {
                                     (it.first() - bucketsDef[index].range.start).apply {
-                                        if (! this.isNegative())
+                                        if (!this.isNegative())
                                             deadLineList.add(this)
                                     }
                                 }
                             }
 
                             if (deadLineList.size != 0) {
-                                if (it.isEmpty()) {
+                                if (! listBucket[0].isEmpty()) {
                                     Log.d("CLICCLAC", "Next deadline " + deadLineList[0])
                                     delay(deadLineList[0].plus(500.milliseconds))
                                 } else {
                                     delay(1.0.seconds)
                                 }
-                            }  else {
+                            } else {
                                 break
                             }
                         }
-
                     }
                 }
         }
-    }
-
-
-    companion object {
-        private const val TIMEOUT_MILLIS = 5_000L
-
     }
 }
 

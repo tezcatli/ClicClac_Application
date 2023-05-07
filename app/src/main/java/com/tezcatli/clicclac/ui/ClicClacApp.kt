@@ -1,11 +1,18 @@
 package com.tezcatli.clicclac.ui
 
 import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.HourglassBottom
@@ -22,9 +29,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.modifier.modifierLocalConsumer
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -33,19 +44,18 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.tezcatli.clicclac.R
 import org.intellij.lang.annotations.JdkConstants.HorizontalAlignment
 
-interface NavigationDestination {
-    /**
-     * Unique name to define the path for a composable
-     */
-    val route: String
-
-    /**
-     * String resource id to that contains title to be displayed for the screen.
-     */
-    val titleRes: Int
+enum class ROUTES(val title: String) {
+    HOME("Clic Clac App"),
+    CAMERA("camera"),
+    CONFIG("Settings"),
+    CONFIGCASSETTE("Settings"),
+    PHOTO("Photo developed")
 }
+
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,21 +81,35 @@ fun ClicClacApp(
 
             fullScreen = when {
                 viewModel.fullScreen -> true
-                currentDestination?.route == "camera" -> true
+                currentDestination?.route == ROUTES.CAMERA.name -> true
                 else -> false
             }
 
 
-            Log.e("CLICCLAC", currentDestination?.route.toString() + " " + viewModel.fullScreen)
+            Log.d("CLICCLAC", currentDestination?.route.toString() + " " + viewModel.fullScreen)
 
             if (!fullScreen) {
                 TopAppBar(
+
                     title = {
-                        Row(horizontalArrangement = Arrangement.Center) {
-                            Text(
-                                textAlign = TextAlign.Center,
-                                text = "Clic Clac"
+                        Row(modifier = modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween) {
+                            if (currentDestination?.route != null) {
+                                Row(modifier = modifier.height(IntrinsicSize.Max),
+                                verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    textAlign = TextAlign.Center,
+                                    text = ROUTES.valueOf(currentDestination?.route.toString()).title,
+                                )
+                            }
+                            }
+                            Image(
+                                painterResource(id = R.drawable.clicclac_logo_v2),
+                                "",
+                                modifier = modifier.size(48.dp).padding(end =  10.dp)
                             )
+
                         }
                     },
                 )
@@ -97,50 +121,50 @@ fun ClicClacApp(
             if (!fullScreen) {
                 NavigationBar() {
                     NavigationBarItem(
-                        selected = currentDestination?.hierarchy?.any { it.route == "config" } == true,
+                        selected = currentDestination?.hierarchy?.any { it.route == ROUTES.CONFIG.name } == true,
                         icon = { Icon(Icons.Filled.Menu, null) },
-                        onClick = { navController.navigate("config") })
+                        onClick = { navController.navigate(ROUTES.CONFIG.name) })
                     NavigationBarItem(
-                        selected = currentDestination?.hierarchy?.any { it.route == "home" } == true,
+                        selected = currentDestination?.hierarchy?.any { it.route == ROUTES.HOME.name} == true,
                         icon = { Icon(Icons.Filled.HourglassBottom, null) },
-                        onClick = { navController.navigate("home") })
+                        onClick = { navController.navigate(ROUTES.HOME.name) })
                     NavigationBarItem(
-                        selected = currentDestination?.hierarchy?.any { it.route == "camera" } == true,
+                        selected = currentDestination?.hierarchy?.any { it.route == ROUTES.CAMERA.name } == true,
                         icon = { Icon(Icons.Filled.Camera, null) },
-                        onClick = { navController.navigate("camera") })
+                        onClick = { navController.navigate(ROUTES.CAMERA.name) })
                 }
             }
         }
     )
     { innerPadding ->
-        NavHost(navController, startDestination = "home", Modifier.padding(innerPadding)) {
-            composable(route = "home") {
+        NavHost(navController, startDestination = ROUTES.HOME.name, Modifier.padding(innerPadding)) {
+            composable(route = ROUTES.HOME.name) {
                 EscrowedList(
-                    onClickExpired = { navController.navigate("photo") }
+                    onClickExpired = { navController.navigate(ROUTES.PHOTO.name) }
                     //itemList = listAllState.itemList,
                     //    modifier = modifier.padding(innerPadding),
 //                    onClick = viewModel::recoverPhoto
                 )
             }
-            composable(route = "camera") {
+            composable(route = ROUTES.CAMERA.name) {
                 CameraScreen(
-                    onConfig = { navController.navigate("home") }
+                    onConfig = { navController.navigate(ROUTES.HOME.name) }
 //                onCapture = {}
                 )
             }
-            composable(route = "config") {
+            composable(route = ROUTES.CONFIG.name) {
                 ConfigScreen(
-                    onCassetteClick = { navController.navigate("configCassette") }
+                    onCassetteClick = { navController.navigate(ROUTES.CONFIGCASSETTE.name) }
 //                onCapture = {}
                 )
             }
-            composable(route = "configCassette") {
+            composable(route = ROUTES.CONFIGCASSETTE.name) {
                 ConfigCassetteScreen(
                     onSubmit = { navController.popBackStack() }
 //                onCapture = {}
                 )
             }
-            composable(route = "photo") {
+            composable(route = ROUTES.PHOTO.name) {
                 PhotosScreen(
                     appViewModel = viewModel,
                     modifier = Modifier.fillMaxWidth()
