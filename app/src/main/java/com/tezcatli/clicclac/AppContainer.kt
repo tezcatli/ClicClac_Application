@@ -3,8 +3,10 @@ package com.tezcatli.clicclac
 
 import android.content.ContentResolver
 import android.content.Context
+import android.graphics.Camera
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import com.tezcatli.clicclac.Camera.CameraManager
 import com.tezcatli.clicclac.settings.SettingsRepository
 import java.util.concurrent.Executor
 
@@ -16,6 +18,7 @@ interface AppContainer {
     val contentResolver : ContentResolver
     val dataStore : DataStore<Preferences>
     val settingsRepository : SettingsRepository
+    val cameraManager : CameraManager
     val mainExecutor : Executor
     val appContext : Context
 }
@@ -42,6 +45,10 @@ class AppDataContainer(private val context: Context) : AppContainer {
 
     override val settingsRepository: SettingsRepository by lazy {
         SettingsRepository.getInstance(context.dataStore)
+    }
+
+    override val cameraManager: CameraManager by lazy {
+        CameraManager.getInstance(context)
     }
 }
 

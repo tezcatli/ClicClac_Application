@@ -35,7 +35,9 @@ object AppViewModelProvider {
             CameraViewModel(
                 clicClacApplication().container.mainExecutor,
                 clicClacApplication().container.escrowManager,
-                clicClacApplication().container.settingsRepository
+                clicClacApplication().container.settingsRepository,
+                clicClacApplication().container.cameraManager,
+                clicClacApplication().container.appContext
             )
         }
 
