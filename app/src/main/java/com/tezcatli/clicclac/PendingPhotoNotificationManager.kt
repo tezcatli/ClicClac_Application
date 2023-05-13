@@ -10,6 +10,7 @@ import android.content.Context.NOTIFICATION_SERVICE
 import android.content.Intent
 import android.content.Intent.ACTION_VIEW
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -126,8 +127,10 @@ class PendingPhotoNotificationManager(val appContext: Context, val escrowManager
                             //                                          int[] grantResults)
                             // to handle the case where the user grants the permission. See the documentation
                             // for ActivityCompat#requestPermissions for more details.
-                            return@launch
+                            Log.e("CLICCLAC",  "Unable to send notification, no permission")
+                            return@with
                         }
+                        Log.e("CLICCLAC",  "Sent notification")
                         notify(0, notification.build())
                     }
                 }
@@ -149,10 +152,11 @@ class PendingPhotoNotificationManager(val appContext: Context, val escrowManager
         val name = appContext.getString(R.string.channel_name)
         val descriptionText = appContext.getString(R.string.channel_description)
         val importance = NotificationManager.IMPORTANCE_LOW
+
         val mChannel = NotificationChannel("ClicClac", name, importance)
         mChannel.description = descriptionText
-        // Register the channel with the system. You can't change the importance
-        // or other notification behaviors after this.
+
+
         val notificationManager =
             appContext.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(mChannel)
@@ -164,7 +168,7 @@ class PendingPhotoNotificationManager(val appContext: Context, val escrowManager
 
         val pending: PendingIntent = TaskStackBuilder.create(appContext).run {
             addNextIntentWithParentStack(taskDetailIntent)
-            getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
+            getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE )
         }
 
         //    escrowManager.listAllF().filterNotNull() {

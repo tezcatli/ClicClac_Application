@@ -17,5 +17,6 @@ class ClicClacAppViewModel() :  ViewModel() {
         fullScreen = fullscreen
     }
     */
+
 }
 

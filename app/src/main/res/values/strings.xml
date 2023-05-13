@@ -7,4 +7,14 @@
     <string name="switch_to_camera">Camera</string>
     <string name="channel_name">Clic Clac</string>
     <string name="channel_description">Notification for pending developments</string>
+    <string name="permissions_rationale">
+        This application requires the following permissions to work properly\n
+        - Access to camera (obviously)\n
+        - Notifications (optional) : used to notify when photos are ready to be developed\n
+        - storage (mandatory) : required to store undeveloped and developed photos\n
+        \n\n
+        No personal data are collected and transferred outside of this phone
+    </string>
+    <string name="permissions_rationale_title">Rationale on permissions</string>
+
 </resources>
