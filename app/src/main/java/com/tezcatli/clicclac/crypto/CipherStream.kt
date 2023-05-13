@@ -191,8 +191,8 @@ class CipherInputStream(
     }
 
     override fun close() {
-        super.close()
         inputStream.close()
+        super.close()
     }
 
     init {
@@ -279,10 +279,16 @@ class CipherOutputStream(
         }
     }
 
+    override fun flush() {
+        writeChunk(plainBufferOffset)
+        outputStream.flush()
+        super.flush()
+    }
+
     override fun close() {
         writeChunk(plainBufferOffset)
-        super.close()
         outputStream.close()
+        super.close()
     }
 
 

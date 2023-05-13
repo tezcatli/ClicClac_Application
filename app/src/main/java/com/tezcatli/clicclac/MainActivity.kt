@@ -1,7 +1,6 @@
 package com.tezcatli.clicclac
 
 import android.content.pm.PackageManager
-import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -24,18 +23,19 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
         requestCameraPermission()
 
-
         lifecycleScope.launch {
-            (application as CliClacApplication).container.escrowManager.init(URL("http://10.0.2.2:5000"), ::onReady)
+            (application as CliClacApplication).container.escrowManager.init(
+                URL("http://10.0.2.2:5000"),
+                ::onReady
+            )
         }
-
 
     }
 
     private fun onReady() {
+
         setContent {
             //(application as CliClacApplication).container.escrowManager = escrowManager
             ClicClacTheme {
@@ -54,8 +54,6 @@ class MainActivity : ComponentActivity() {
             //requestCameraPermission()
         }
     }
-
-
 
 
     private fun requestCameraPermission() {
@@ -89,6 +87,22 @@ class MainActivity : ComponentActivity() {
             ) -> Log.i("kilo", "Show camera permissions dialog")
 
             else -> requestPermissionLauncher.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        }
+
+        when {
+            ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                Log.i("kilo", "Permission previously granted")
+            }
+
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                this,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) -> Log.i("kilo", "Show camera permissions dialog")
+
+            else -> requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 }

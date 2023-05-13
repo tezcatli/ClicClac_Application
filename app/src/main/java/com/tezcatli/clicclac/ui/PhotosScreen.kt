@@ -1,10 +1,7 @@
 package com.tezcatli.clicclac.ui
 
-import android.content.ContentResolver
-import android.graphics.ImageDecoder
 import android.net.Uri
 import android.util.Log
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,8 +17,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -31,13 +26,12 @@ import com.tezcatli.clicclac.AppViewModelProvider
 
 @Composable
 fun PhotosScreen(
-    appViewModel: ClicClaAppViewModel,
+    appViewModel: ClicClacAppViewModel,
     modifier: Modifier = Modifier,
     viewModel: PhotosViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     PhotosScreen2(
         appViewModel,
-        contentResolver = viewModel.contentResolver,
         modifier = modifier,
         imageUrlList = viewModel.imageUriList
     )
@@ -46,61 +40,37 @@ fun PhotosScreen(
 
 @Composable
 fun PhotosScreen2(
-    appViewModel: ClicClaAppViewModel,
-    contentResolver: ContentResolver,
+    appViewModel: ClicClacAppViewModel,
     modifier: Modifier = Modifier,
     imageUrlList: List<Uri> = listOf(),
 ) {
     var imageUri by remember { mutableStateOf<Uri>(Uri.EMPTY) }
+    var zoom by remember { mutableStateOf(false) }
+    appViewModel.fullScreen = zoom
 
-
-
-    var image by remember { mutableStateOf<ImageBitmap?>(null) }
+    Log.e("CLICCLAC", "appViewModel.fullscreen = " + appViewModel.fullScreen)
 
     Column {
 
-        if (appViewModel.fullScreen) {
-            val source = ImageDecoder.createSource(contentResolver, imageUri)
 
-            /*
-            val image = try {
-                ImageDecoder.decodeBitmap(source).asImageBitmap()
-            } catch (e: Throwable) {
-                Log.e("CLICCLAC", "Exception caught on $e")
-                null
-            }
-            */
-            if (appViewModel.fullScreen) {
-                AsyncImage(
-                    modifier = modifier
-                        .fillMaxSize()
-                        .clickable {
-                            appViewModel.fullScreen = false
-                        },
-                    contentScale = ContentScale.FillHeight,
-                    model = imageUri,
-                    contentDescription = null
-                )
-                /*
-                Image(
-                    modifier = modifier
-                        .fillMaxSize()
-                        .clickable {
-                            appViewModel.fullScreen = false
-                        },
-                    contentScale = ContentScale.FillHeight,
-                    bitmap = image!!, contentDescription = "Image Label"
-                )
-                */
-
-            }
+        if (zoom) {
+            AsyncImage(
+                modifier = modifier
+                    .fillMaxSize()
+                    .clickable {
+                        zoom = false
+                    },
+                contentScale = ContentScale.FillHeight,
+                model = imageUri,
+                contentDescription = null
+            )
         }
 
 
         LazyVerticalGrid(
             modifier = modifier.run {
 
-                if (appViewModel.fullScreen) {
+                if (zoom) {
                     this.requiredSize(0.dp)
                 } else {
                     this
@@ -112,44 +82,17 @@ fun PhotosScreen2(
 
             items(imageUrlList) {
                 Row {
-
-                    val source = ImageDecoder.createSource(contentResolver, it)
-
-                    /*
-                    image = try {
-                        ImageDecoder.decodeBitmap(source).asImageBitmap()
-                    } catch (e: Throwable) {
-           //             Log.e("CLICCLAC", "Exception caught on $e")
-                        null
-                    }
-                    if (image != null) {
-                        Image(
-                            modifier = modifier
-                                .padding(all = 2.dp)
-                                .clickable {
-                                    appViewModel.fullScreen = !appViewModel.fullScreen
-                                    Log.e(
-                                        "CLICCLAC",
-                                        "TOGGLING FULL SCREEN : " + appViewModel.fullScreen.toString()
-                                    )
-                                    imageUri = it
-                                },
-                            contentScale = ContentScale.Fit,
-                            bitmap = image!!, contentDescription = "Image Label"
-                        )
-                    }
-                    */
-
                     AsyncImage(
-                        modifier = modifier.padding(all = 2.dp)
-                        .clickable {
-                            appViewModel.fullScreen = !appViewModel.fullScreen
-                            Log.e(
-                                "CLICCLAC",
-                                "TOGGLING FULL SCREEN : " + appViewModel.fullScreen.toString()
-                            )
-                            imageUri = it
-                        },
+                        modifier = modifier
+                            .padding(all = 2.dp)
+                            .clickable {
+                                Log.e(
+                                    "CLICCLAC",
+                                    "TOGGLING FULL SCREEN : " + appViewModel.fullScreen.toString()
+                                )
+                                imageUri = it
+                                zoom = true
+                            },
                         model = it,
                         contentDescription = null
                     )

@@ -37,7 +37,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,17 +51,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tezcatli.clicclac.AppViewModelProvider
 import com.tezcatli.clicclac.Camera.CameraManager
-import kotlinx.coroutines.launch
 
-
-private const val TAG = "CameraXBasic"
-private const val FILENAME = "yyyy-MM-dd-HH-mm-ss-SSS"
-private const val PHOTO_TYPE = "image/jpeg"
-private const val RATIO_4_3_VALUE = 4.0 / 3.0
-private const val RATIO_16_9_VALUE = 16.0 / 9.0
-
-
-// Create time stamped name and MediaStore entry.
 
 fun flashModeIcon(flashMode : Int) : ImageVector {
     return when (flashMode)  {
@@ -87,6 +76,7 @@ fun CameraScreen(
         updateLensDirection = viewModel::updateLensDirection,
         flashMode = viewModel.flashMode,
         updateFlashMode = viewModel::updateFlashMode,
+        isShutterOpen = viewModel.isShutterOpen,
         setSurface = viewModel::setSurface,
         bind = viewModel::bind,
         onConfig = onConfig,
@@ -105,6 +95,7 @@ fun CameraScreen2(
     updateLensDirection: (Int) -> Unit = {},
     flashMode : Int = ImageCapture.FLASH_MODE_OFF,
     updateFlashMode : (Int) -> Unit = {},
+    isShutterOpen : Boolean= true,
     setSurface: (PreviewView) -> Unit = {},
     bind: (LifecycleOwner) -> Unit = {},
     onConfig: () -> Unit = {},
@@ -121,13 +112,25 @@ fun CameraScreen2(
     if (isInitialized) {
         val previewView = remember { PreviewView(context) }
 
-
         val scale = remember { Animatable(1f) }
-        val scope = rememberCoroutineScope()
 
         LaunchedEffect(cameraSelector) {
             setSurface(previewView)
             bind(lifecycleOwner)
+        }
+
+        LaunchedEffect(isShutterOpen) {
+            if (! isShutterOpen) {
+                scale.animateTo(
+                    0f,
+                    animationSpec = tween(250),
+                )
+            } else {
+                scale.animateTo(
+                    1f,
+                    animationSpec = tween(250),
+                )
+            }
         }
 
         // 3
@@ -264,24 +267,9 @@ fun CameraScreen2(
 
                         IconButton(
                             onClick = {
-                                Log.i("kilo", "ON CLICK")
-//                    viewModel.takePhoto(imageCapture)
-
-                                scope.launch {
-                                    scale.animateTo(
-                                        0f,
-                                        animationSpec = tween(250),
-                                    )
-                                    scale.animateTo(
-                                        1f,
-                                        animationSpec = tween(250),
-                                    )
+                                if (isShutterOpen) {
+                                    onCapture()
                                 }
-
-
-                                onCapture()
-
-
                             },
                             content = {
                                 Icon(

@@ -5,7 +5,7 @@
 package com.tezcatli.clicclac.ui
 
 
-import android.content.ContentResolver
+// import java.time.ZonedDateTime
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -22,7 +22,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
-// import java.time.ZonedDateTime
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
@@ -43,21 +42,14 @@ data class BucketsDef(
     val print: (Duration) -> List<String>
 )
 
-
-data class Bucket(
-    var list: MutableList<Duration> = mutableListOf()
-)
-
-
 class EscrowedListViewModel(
     private val escrowManager: EscrowManager,
-    private val contentResolver: ContentResolver
 ) : ViewModel() {
 
     val bucketsDef = listOf(
         BucketsDef(
             (-Duration.INFINITE).rangeUntil(Duration.ZERO),
-            "ready to develop",
+            "ready to be developed",
             { listOf("Ready", "") }),
         BucketsDef(
             0.seconds.rangeUntil(1.minutes),

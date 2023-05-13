@@ -1,23 +1,20 @@
 package com.tezcatli.clicclac.ui
 
-import android.content.Context
 import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tezcatli.clicclac.Camera.CameraManager
 import com.tezcatli.clicclac.EscrowManager
+import com.tezcatli.clicclac.PendingPhotoNotificationManager
 import com.tezcatli.clicclac.helpers.TimeHelpers
 import com.tezcatli.clicclac.settings.SettingsRepository
 import kotlinx.coroutines.Dispatchers
@@ -26,8 +23,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.ZonedDateTime
 import java.util.concurrent.Executor
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration.Companion.hours
 
 class CameraViewModel(
@@ -35,8 +30,9 @@ class CameraViewModel(
     private val escrowManager: EscrowManager,
     private val settingsRepository: SettingsRepository,
     private val cameraManager: CameraManager,
-    private val appContext: Context
-) : ViewModel(), LifecycleObserver {
+    private val pendingPhotoNotificationManager: PendingPhotoNotificationManager,
+) : ViewModel() {
+
 
     private var cassetteDevelopmentDelay = 0.hours
     var isInitialized by mutableStateOf(false)
@@ -50,9 +46,17 @@ class CameraViewModel(
 
     var flashMode by mutableStateOf(ImageCapture.FLASH_MODE_OFF)
 
+    var shootCount by mutableStateOf(0)
+
+    var isShutterOpen by mutableStateOf(true)
+
+
+
     fun takePhoto() {
+        isShutterOpen = false
         cameraManager.takePhoto { imageCapture ->
             viewModelScope.launch(Dispatchers.IO) {
+
 
                 val dateTime = ZonedDateTime.now()
                 val uuid =
@@ -80,6 +84,8 @@ class CameraViewModel(
                                 ostream.outputStream.close()
                             } catch (e: Exception) {
                                 Log.e("CLICCLAC", "Caught exception $e")
+                            } finally {
+                                isShutterOpen = true
                             }
                         }
 
@@ -87,8 +93,12 @@ class CameraViewModel(
                             try {
                                 ostream.outputStream.close()
                                 Log.e("CLICLAC", "Photo shoot ")
+
+                                pendingPhotoNotificationManager.scheduleNextNotification(true)
                             } catch (e: Exception) {
                                 Log.e("CLICCLAC", "Caught exception $e")
+                            } finally {
+                                isShutterOpen = true
                             }
                         }
                     })
@@ -157,14 +167,4 @@ class CameraViewModel(
     }
 }
 
-suspend fun Context.getCameraProvider(): ProcessCameraProvider = suspendCoroutine { continuation ->
-    ProcessCameraProvider.getInstance(this).also { future ->
-        future.addListener({
-            continuation.resume(future.get())
-        }, executor)
-    }
-}
-
-val Context.executor: Executor
-    get() = ContextCompat.getMainExecutor(this)
 

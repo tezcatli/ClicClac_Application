@@ -2,15 +2,12 @@ package com.tezcatli.clicclac.ui
 
 import android.content.ContentResolver
 import android.content.ContentValues
-import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -33,10 +30,6 @@ class PhotosViewModel(
 ) : ViewModel() {
 
     private var expiredList: List<EscrowDbEntry> = listOf()
-    // val imageList: MutableList<Uri> = mutableListOf()
-    //val bitmapList : MutableList<Bitmap> =  mutableListOf()
-
-    val imageBitmapList = mutableStateListOf<ImageBitmap>()
 
     val imageUriList = mutableStateListOf<Uri>()
 
@@ -91,12 +84,12 @@ class PhotosViewModel(
                         }
                     }
                 } else {
-                    val outputFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString(), istream.streamName)
+                    val outputFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString(), "/ClicClac" + istream.streamName)
 
                     java.nio.file.Files.copy(
                         istream.inputStream,
                         outputFile.toPath(),
-                        StandardCopyOption.REPLACE_EXISTING);
+                        StandardCopyOption.REPLACE_EXISTING)
                     uri = outputFile.toUri()
                 }
             }

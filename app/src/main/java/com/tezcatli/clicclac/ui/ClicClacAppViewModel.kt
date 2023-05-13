@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 
-class ClicClaAppViewModel() :  ViewModel() {
+class ClicClacAppViewModel() :  ViewModel() {
     var fullScreen by mutableStateOf(false)
 
 /*

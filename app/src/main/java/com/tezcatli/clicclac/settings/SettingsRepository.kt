@@ -26,7 +26,6 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
     companion object Keys {
         val CASSETTE_DEVELOPMENT_DELAY = stringPreferencesKey("CASSETTE_DEVELOPMENT_DELAY")
 
-
         @Volatile
         private var Instance: SettingsRepository? = null
 
@@ -35,6 +34,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
                 return SettingsRepository(dataStore).also { Instance = it }
             }
         }
+
     }
 
 

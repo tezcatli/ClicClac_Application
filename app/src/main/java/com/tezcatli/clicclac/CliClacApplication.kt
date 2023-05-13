@@ -6,8 +6,10 @@ import android.os.StrictMode
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.work.Configuration
+import androidx.work.DelegatingWorkerFactory
 
-class CliClacApplication: Application() {
+class CliClacApplication: Application(), Configuration.Provider {
     //lateinit var escrowManager : EscrowManager
 
     lateinit var container: AppContainer
@@ -32,7 +34,23 @@ class CliClacApplication: Application() {
 
 
     }
+
+
+    override fun getWorkManagerConfiguration(): Configuration {
+        val myWorkerFactory = DelegatingWorkerFactory()
+        myWorkerFactory.addFactory(NotificationWorkerFactory(container.pendingPhotoNotificationManager))
+        // Add here other factories that you may need in your application
+
+        return Configuration.Builder()
+            .setMinimumLoggingLevel(android.util.Log.INFO)
+            .setWorkerFactory(myWorkerFactory)
+            .build()
+    }
+
+
 }
 
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+
+

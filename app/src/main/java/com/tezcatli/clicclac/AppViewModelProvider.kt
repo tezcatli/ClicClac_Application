@@ -1,6 +1,5 @@
 package com.tezcatli.clicclac
 
-import android.app.Application
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
@@ -21,7 +20,6 @@ object AppViewModelProvider {
         initializer {
             EscrowedListViewModel(
                 clicClacApplication().container.escrowManager,
-                clicClacApplication().container.contentResolver
             )
         }
 
@@ -37,7 +35,7 @@ object AppViewModelProvider {
                 clicClacApplication().container.escrowManager,
                 clicClacApplication().container.settingsRepository,
                 clicClacApplication().container.cameraManager,
-                clicClacApplication().container.appContext
+                clicClacApplication().container.pendingPhotoNotificationManager
             )
         }
 
@@ -78,3 +76,4 @@ object AppViewModelProvider {
 
 fun CreationExtras.clicClacApplication(): CliClacApplication =
     (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as CliClacApplication)
+
