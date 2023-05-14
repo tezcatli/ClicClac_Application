@@ -35,7 +35,9 @@ object AppViewModelProvider {
                 clicClacApplication().container.escrowManager,
                 clicClacApplication().container.settingsRepository,
                 clicClacApplication().container.cameraManager,
-                clicClacApplication().container.pendingPhotoNotificationManager
+                clicClacApplication().container.pendingPhotoNotificationManager,
+                clicClacApplication().container.locationManager,
+                clicClacApplication().container.appContext
             )
         }
 

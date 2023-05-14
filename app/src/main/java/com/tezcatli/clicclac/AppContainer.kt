@@ -23,6 +23,7 @@ interface AppContainer {
     val appContext : Context
     val packageManager : PackageManager
     val pendingPhotoNotificationManager : PendingPhotoNotificationManager
+    val locationManager : LocationManager
 }
 
 /**
@@ -59,6 +60,11 @@ class AppDataContainer(private val context: Context) : AppContainer {
     override val pendingPhotoNotificationManager: PendingPhotoNotificationManager by lazy {
         PendingPhotoNotificationManager.getInstance(context, escrowManager)
     }
+
+    override val locationManager : LocationManager by lazy {
+        LocationManager.getInstance(context)
+    }
+
 }
 
 

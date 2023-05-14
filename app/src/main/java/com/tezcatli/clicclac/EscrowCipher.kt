@@ -532,9 +532,9 @@ class CipherInputStreamProcessor(val uuid: String, val escrowCipher: EscrowCiphe
         //Log.e("CIPHER_INPUT_STREAM", "IV = " + hex(iv)!!)
     }
 
-    fun decrypt(ciphered: ByteArray, len: Int, plain: ByteArray) {
+    fun decrypt(ciphered: ByteArray, len: Int, plain: ByteArray) : Int {
         //Log.e("CIPHER_INPUT_STREAM", "PAYLOAD = " + hex(ciphered, len)!!)
-        val res = cipher.doFinal(ciphered, 0, len, plain)
+        return cipher.doFinal(ciphered, 0, len, plain)
 //        Log.e("CLICCLAC", "decrypt len = $len, returnLen = $res")
 //        if (plain[len-50] == 0xbb.toByte() &&
 //            plain[len-40] == 0xbb.toByte() &&
@@ -574,8 +574,8 @@ class CipherOutputStreamProcessor(val uuid: String, val escrowCipher: EscrowCiph
         return 16
     }
 
-    fun encrypt(plain: ByteArray, len: Int, ciphered: ByteArray) {
-        cipher.doFinal(plain, 0, len, ciphered)
+    fun encrypt(plain: ByteArray, inputOffset : Int, len: Int, ciphered: ByteArray) : Int {
+        return cipher.doFinal(plain, inputOffset, len, ciphered)
         //Log.e("CIPHER_OUTPUT_STREAM", "PAYLOAD = " + hex(ciphered, len)!!)
     }
 

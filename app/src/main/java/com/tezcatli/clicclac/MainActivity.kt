@@ -45,6 +45,9 @@ class MainActivity : ComponentActivity() {
 
     private val listPermissions =  buildList {
         add(android.Manifest.permission.CAMERA)
+        add(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+        add(android.Manifest.permission.ACCESS_FINE_LOCATION)
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
         }

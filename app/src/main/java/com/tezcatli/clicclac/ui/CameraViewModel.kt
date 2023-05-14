@@ -1,5 +1,8 @@
 package com.tezcatli.clicclac.ui
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
 import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -9,11 +12,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.tasks.Tasks
 import com.tezcatli.clicclac.Camera.CameraManager
 import com.tezcatli.clicclac.EscrowManager
+import com.tezcatli.clicclac.LocationManager
 import com.tezcatli.clicclac.PendingPhotoNotificationManager
 import com.tezcatli.clicclac.helpers.TimeHelpers
 import com.tezcatli.clicclac.settings.SettingsRepository
@@ -25,6 +31,7 @@ import java.time.Duration
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.toKotlinDuration
 
@@ -34,11 +41,13 @@ class CameraViewModel(
     private val settingsRepository: SettingsRepository,
     private val cameraManager: CameraManager,
     private val pendingPhotoNotificationManager: PendingPhotoNotificationManager,
+    private val locationManager: LocationManager,
+    private val appContext: Context
 ) : ViewModel() {
 
 
     private var cassetteDevelopmentDelay = 0.hours
-    private var shotsPerDays : Int = 0
+    private var shotsPerDays: Int = 0
 
     var isInitialized by mutableStateOf(false)
 
@@ -57,12 +66,32 @@ class CameraViewModel(
 
     var isShutterOpen by mutableStateOf(true)
 
-
+    val executor2: Executor = Executors.newSingleThreadExecutor()
 
     fun takePhoto() {
         isShutterOpen = false
         cameraManager.takePhoto { imageCapture ->
-            viewModelScope.launch(executor.asCoroutineDispatcher()) {
+            viewModelScope.launch(executor2.asCoroutineDispatcher()) {
+
+                val task = if (ActivityCompat.checkSelfPermission(
+                        appContext,
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                        appContext,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    null
+                } else {
+                    locationManager.fusedLocationClient.lastLocation
+                }
 
 
                 val dateTime = ZonedDateTime.now()
@@ -73,11 +102,22 @@ class CameraViewModel(
                     uuid,
                     dateTime.toLocalDateTime().toString() + ".jpg"
                 ).build()
+
                 val outputOptions =
-                    ImageCapture.OutputFileOptions.Builder(ostream.outputStream).build()
+                    ImageCapture.OutputFileOptions.Builder(ostream.outputStream).run {
+                        if (task != null) {
+                              val location = Tasks.await(task)
+                            this.setMetadata(
+                                ImageCapture.Metadata().apply { this.location = location })
+                        }
+                        this
+                    }.build()
 
 
                 imageCapture.flashMode = flashMode
+
+
+
 
                 imageCapture.takePicture(
                     outputOptions,
@@ -101,12 +141,16 @@ class CameraViewModel(
                                 ostream.outputStream.close()
                                 Log.e("CLICLAC", "Photo shoot ")
 
-                                pendingPhotoNotificationManager.scheduleNextNotification(true)
+                                pendingPhotoNotificationManager.scheduleNextNotification(
+                                    true
+                                )
 
                                 addShot()
                                 viewModelScope.launch(executor.asCoroutineDispatcher()) {
                                     settingsRepository.setShotsInDay(shotsInDay)
-                                    settingsRepository.setLastShotTimeStamp(ZonedDateTime.now().toString())
+                                    settingsRepository.setLastShotTimeStamp(
+                                        ZonedDateTime.now().toString()
+                                    )
                                 }
                             } catch (e: Exception) {
                                 Log.e("CLICCLAC", "Caught exception $e")
@@ -114,10 +158,13 @@ class CameraViewModel(
                                 isShutterOpen = true
                             }
                         }
-                    })
+                    }
+                )
             }
+
         }
     }
+
 
     fun setSurface(previewView: PreviewView) {
         cameraManager.setSurface(previewView)
@@ -132,12 +179,12 @@ class CameraViewModel(
                 cameraManager.bind(lifecycleOwner, cameraSelector)
             } catch (e: java.lang.IllegalArgumentException) {
                 Log.e("CLICCLAC", "Unable to intialize camera $cameraSelector , removing it")
-            //    if (e.message == "Provided camera selector unable to resolve a camera for the given use case") {
-                    listLens.removeIf {
-                        it.selector == cameraSelector
-                    }
-                    tryAgain = true
-             //   }
+                //    if (e.message == "Provided camera selector unable to resolve a camera for the given use case") {
+                listLens.removeIf {
+                    it.selector == cameraSelector
+                }
+                tryAgain = true
+                //   }
             }
         }
     }
@@ -175,10 +222,9 @@ class CameraViewModel(
     }
 
 
-
     @Synchronized
-     fun addShot() {
-        shotsInDay ++
+    fun addShot() {
+        shotsInDay++
         shotsRemaining = shotsPerDays - shotsInDay
     }
 
@@ -211,7 +257,12 @@ class CameraViewModel(
 
             viewModelScope.launch {
 
-                delay(Duration.between(now, now.truncatedTo(ChronoUnit.DAYS).plus(1, ChronoUnit.DAYS)).toKotlinDuration())
+                delay(
+                    Duration.between(
+                        now,
+                        now.truncatedTo(ChronoUnit.DAYS).plus(1, ChronoUnit.DAYS)
+                    ).toKotlinDuration()
+                )
 
                 resetShot()
             }

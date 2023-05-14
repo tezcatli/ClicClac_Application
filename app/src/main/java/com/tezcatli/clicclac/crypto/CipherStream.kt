@@ -204,7 +204,7 @@ class CipherInputStream(
 class CipherOutputStream(
     private val outputStream: OutputStream,
     private val outputStreamProcessor: CipherOutputStreamProcessor,
-    val chunkSize: Int = 1024 * 56
+    val chunkSize: Int = 1024 * 256
 ) : OutputStream() {
 
     var plainBuffer = ByteArray(chunkSize)
@@ -227,24 +227,43 @@ class CipherOutputStream(
         writeNBytes(NumberSerializers.numberToByteArray(value))
     }
 
-    fun writeChunk(size: Int) {
+    fun writeChunk(size: Int, offset : Int = 0) {
         //    chunkOffset = 0
 
-        plainBufferOffset = 0
 
         chunkHeader.contentSize = size
 
         chunkHeader.iv = outputStreamProcessor.setUp()
         chunkHeader.ivSize = chunkHeader.iv.size
 
+
+
+        val res = outputStreamProcessor.encrypt(plainBuffer, offset, size, cipherBuffer)
+
+        if (res != size + outputStreamProcessor.getByteOverhead()) {
+      //      throw Exception("Couille Dans le potage")
+            val newSize = res - outputStreamProcessor.getByteOverhead()
+            var writtenSize = 0
+            //var offset2 = 0
+            while (writtenSize != size) {
+                val writeSize = if ((size - writtenSize) > newSize)
+                    newSize
+                else
+                    size - writtenSize
+                writeChunk(writeSize, writtenSize)
+                writtenSize += writeSize
+            }
+            return
+        }
+
         writeInt(chunkHeader.iv.size)
         writeNBytes(chunkHeader.iv)
         writeInt(size)
 
 
-        outputStreamProcessor.encrypt(plainBuffer, size, cipherBuffer)
-
         writeNBytes(cipherBuffer, 0, size + outputStreamProcessor.getByteOverhead())
+
+        plainBufferOffset = 0
 
     }
 

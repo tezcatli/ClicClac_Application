@@ -16,8 +16,8 @@ android {
         applicationId "com.tezcatli.clicclac"
         minSdk 28
         targetSdk 33
-        versionCode 6
-        versionName "1.5"
+        versionCode 7
+        versionName "1.6"
 
         buildConfigField "boolean", "TEST", "false"
 
@@ -75,6 +75,7 @@ dependencies {
     implementation 'androidx.room:room-ktx:2.5.1'
     implementation 'androidx.navigation:navigation-runtime-ktx:2.5.3'
     implementation 'com.google.firebase:firebase-components:17.1.0'
+    implementation 'com.google.android.play:core-ktx:1.8.1'
 
     annotationProcessor "androidx.room:room-compiler:2.5.1"
 
@@ -126,5 +127,7 @@ dependencies {
 
     implementation "androidx.core:core:1.10.0"
 
+
+    implementation 'com.google.android.gms:play-services-location:21.0.1'
 
 }
