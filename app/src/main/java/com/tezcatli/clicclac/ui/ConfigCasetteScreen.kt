@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
@@ -24,55 +25,59 @@ import com.tezcatli.clicclac.AppViewModelProvider
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConfigCassetteScreen(
+    modifier : Modifier = Modifier,
     viewModel: ConfigCassetteViewModel = viewModel(factory = AppViewModelProvider.Factory),
     onSubmit : ()->Unit = {}
 ) {
-    ElevatedCard(modifier = Modifier.padding(all = 20.dp)) {
-        Column(modifier = Modifier.padding(all = 20.dp)) {
-            // Row(horizontalArrangement = Arrangement.Center) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+    Column(modifier = modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center) {
+        ElevatedCard(modifier = Modifier.padding(all = 20.dp)) {
+            Column(modifier = Modifier.padding(all = 20.dp)) {
+                // Row(horizontalArrangement = Arrangement.Center) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Change deadline",
+                        fontSize = 30.sp,
+                    )
+                    Text(
+                        text = "Instructions",
+                        fontSize = 20.sp,
+                    )
+                    Divider(modifier = Modifier.padding(vertical = 5.dp))
+                }
+                //  }
                 Text(
-                    text = "Change deadline",
-                    fontSize = 30.sp,
-                )
-                Text(
-                    text = "Instructions",
-                    fontSize = 20.sp,
-                )
-                Divider(modifier = Modifier.padding(vertical = 5.dp))
-            }
-            //  }
-            Text(
-                text = DELAY_CHANGE_INSTRUCTION
+                    text = DELAY_CHANGE_INSTRUCTION
 
-            )
+                )
 //val truc = ConfigViewModel::setDeadline
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = viewModel.cassetteDevelopmentDelayChange,
-                isError = !viewModel.cassetteDevelopmentDelayValid,
-                onValueChange = { change -> viewModel.validateDevelopmentDelay(change) },
-                keyboardActions = KeyboardActions(onNext = {
-                    Log.e("TEST", "onDone")
-                }),
-                label = { Text("Change developpment delay") })
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    value = viewModel.cassetteDevelopmentDelayChange,
+                    isError = !viewModel.cassetteDevelopmentDelayValid,
+                    onValueChange = { change -> viewModel.validateDevelopmentDelay(change) },
+                    keyboardActions = KeyboardActions(onNext = {
+                        Log.e("TEST", "onDone")
+                    }),
+                    label = { Text("Change developpment delay") })
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 10.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Button(
-                    enabled = viewModel.cassetteDevelopmentDelayValid,
-                    onClick = {
-                        viewModel.setDevelopmentDelay()
-                        onSubmit()
-                    } ) {
-                    Text(text = "Submit")
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        enabled = viewModel.cassetteDevelopmentDelayValid,
+                        onClick = {
+                            viewModel.setDevelopmentDelay()
+                            onSubmit()
+                        }) {
+                        Text(text = "Submit")
+                    }
                 }
             }
         }

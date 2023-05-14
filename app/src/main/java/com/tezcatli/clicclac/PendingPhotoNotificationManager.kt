@@ -96,7 +96,9 @@ class PendingPhotoNotificationManager(val appContext: Context, val escrowManager
 
 
     fun scheduleNextNotification(scheduleOnly : Boolean = false) {
+
         scope.launch() {
+
             val listAll = escrowManager.listAllF().filterNotNull().first()
 
             if (!listAll.isEmpty()) {
@@ -105,6 +107,7 @@ class PendingPhotoNotificationManager(val appContext: Context, val escrowManager
                 val pendingList = listAll.filter {
                     it.deadline >= now
                 }
+                Log.e("CLICCLAC", "expiredCount = $expiredCount")
 
 
                 if (expiredCount > 0  && ! scheduleOnly) {
@@ -112,6 +115,7 @@ class PendingPhotoNotificationManager(val appContext: Context, val escrowManager
                         notification.setContentText("$expiredCount photo ready to be developed.")
                     else
                         notification.setContentText("$expiredCount photos ready to be developed.")
+
 
 
                     with(NotificationManagerCompat.from(appContext)) {
@@ -148,6 +152,7 @@ class PendingPhotoNotificationManager(val appContext: Context, val escrowManager
     }
 
     init {
+
         Instance = this
         val name = appContext.getString(R.string.channel_name)
         val descriptionText = appContext.getString(R.string.channel_description)
@@ -164,11 +169,11 @@ class PendingPhotoNotificationManager(val appContext: Context, val escrowManager
 
         val taskDetailIntent = Intent(
             ACTION_VIEW,
-            "https://tezcatli.clicclac".toUri())
+            "clicclac://home".toUri())
 
         val pending: PendingIntent = TaskStackBuilder.create(appContext).run {
             addNextIntentWithParentStack(taskDetailIntent)
-            getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE )
+            getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE )
         }
 
         //    escrowManager.listAllF().filterNotNull() {
@@ -178,7 +183,7 @@ class PendingPhotoNotificationManager(val appContext: Context, val escrowManager
             //    .setContentText("Clic Clac Content")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pending)
-            .setAutoCancel(true)
+      //      .setAutoCancel(true)
 
 
         scheduleNextNotification()

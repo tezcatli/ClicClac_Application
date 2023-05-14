@@ -2,6 +2,7 @@ package com.tezcatli.clicclac.ui
 
 import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -27,6 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -40,7 +43,6 @@ import androidx.navigation.navDeepLink
 import com.tezcatli.clicclac.R
 
 
-
 enum class ROUTES(val title: String) {
     HOME("Clic Clac App"),
     CAMERA("camera"),
@@ -48,8 +50,6 @@ enum class ROUTES(val title: String) {
     CONFIGCASSETTE("Settings"),
     PHOTO("Photo developed")
 }
-
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,22 +86,48 @@ fun ClicClacApp(
                 TopAppBar(
 
                     title = {
-                        Row(modifier = modifier.fillMaxWidth(),
+                        Row(
+                            modifier = modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween) {
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
                             if (currentDestination?.route != null) {
-                                Row(modifier = modifier.height(IntrinsicSize.Max),
-                                verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    textAlign = TextAlign.Center,
-                                    text = ROUTES.valueOf(currentDestination.route.toString()).title,
-                                )
+                                Row(
+                                    modifier = modifier.height(IntrinsicSize.Max),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        textAlign = TextAlign.Center,
+                                        text = ROUTES.valueOf(currentDestination.route.toString()).title,
+                                    )
+                                }
                             }
-                            }
-                            Image(
-                                painterResource(id = R.drawable.clicclac_logo_v2),
+
+
+
+
+                            Image(painter = painterResource(id = R.drawable.clicclac_logo_v2),
                                 "",
-                                modifier = modifier.size(48.dp).padding(end =  10.dp)
+                                colorFilter = if (isSystemInDarkTheme()) {
+                                    val colorMatrixDark = floatArrayOf(
+                                        -1f, 0f, 0f, 0f, 255f,
+                                        0f, -1f, 0f, 0f, 255f,
+                                        0f, 0f, -1f, 0f, 255f,
+                                        0f, 0f, 0f, 1f, 0f
+                                    )
+                                    ColorFilter.colorMatrix(ColorMatrix(colorMatrixDark))
+                                } else {
+                                    val colorMatrixLight = floatArrayOf(
+                                        1f, 0f, 0f, 0f, 255f,
+                                        0f, 1f, 0f, 0f, 255f,
+                                        0f, 0f, 1f, 0f, 255f,
+                                        0f, 0f, 0f, 1f, 0f
+                                    )
+                                    ColorFilter.colorMatrix(ColorMatrix(colorMatrixLight))
+                                },
+                                modifier = modifier
+                                    .size(48.dp)
+                                    .padding(end = 10.dp)
                             )
 
                         }
@@ -119,7 +145,7 @@ fun ClicClacApp(
                         icon = { Icon(Icons.Filled.Menu, null) },
                         onClick = { navController.navigate(ROUTES.CONFIG.name) })
                     NavigationBarItem(
-                        selected = currentDestination?.hierarchy?.any { it.route == ROUTES.HOME.name} == true,
+                        selected = currentDestination?.hierarchy?.any { it.route == ROUTES.HOME.name } == true,
                         icon = { Icon(Icons.Filled.HourglassBottom, null) },
                         onClick = { navController.navigate(ROUTES.HOME.name) })
                     NavigationBarItem(
@@ -131,11 +157,16 @@ fun ClicClacApp(
         }
     )
     { innerPadding ->
-        NavHost(navController, startDestination = ROUTES.HOME.name, Modifier.padding(innerPadding)) {
+        NavHost(
+            navController,
+            startDestination = ROUTES.HOME.name,
+            Modifier.padding(innerPadding)
+        ) {
             composable(route = ROUTES.HOME.name,
                 deepLinks = listOf(navDeepLink {
-                    uriPattern = "https://tezcatli.clicclac"
-                })) {
+                    uriPattern = "clicclac://home"
+                })
+            ) {
                 EscrowedList(
                     onClickExpired = { navController.navigate(ROUTES.PHOTO.name) }
                     //itemList = listAllState.itemList,

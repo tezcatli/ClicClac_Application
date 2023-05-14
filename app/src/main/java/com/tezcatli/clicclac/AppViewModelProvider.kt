@@ -25,7 +25,8 @@ object AppViewModelProvider {
 
         initializer {
             ConfigViewModel(
-                clicClacApplication().container.settingsRepository
+                clicClacApplication().container.settingsRepository,
+                clicClacApplication().container.packageManager
             )
         }
 

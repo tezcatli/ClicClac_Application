@@ -1,7 +1,9 @@
 package com.tezcatli.clicclac.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Divider
@@ -18,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tezcatli.clicclac.AppViewModelProvider
+import com.tezcatli.clicclac.BuildConfig
 
 
 @Composable
@@ -29,9 +32,10 @@ fun ConfigScreen(
     val cassetteDevelopmentDelayState by viewModel.cassetteDevelopmentDelayState.collectAsState()
 
     ConfigScreen2(
-        modifier,
+        modifier = modifier,
         onCassetteClick = onCassetteClick,
-        cassetteDevelopmentDelayState
+        cassetteDevelopmentDelay = cassetteDevelopmentDelayState,
+        //   versionName = viewModel
     )
 }
 
@@ -44,28 +48,46 @@ fun ConfigScreen2(
 ) {
     //var textValue by remember { mutableStateOf("") }
 
-    OutlinedCard(
-        modifier = modifier.fillMaxWidth().padding(all = 5.dp)
-            .clickable(enabled = true) { onCassetteClick() }
-    ) {
-        Column(
-            modifier = modifier.padding(all = 10.dp)
+//    Log.i("toto", BuildConfig.BUILD_TIME)
+
+    Column {
+        OutlinedCard(
         ) {
-
-            Column(
-                modifier = modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+            Row(modifier = modifier
+                .fillMaxWidth()
+                .padding(all = 5.dp),
+                horizontalArrangement = Arrangement.Center) {
                 Text(
-                    text = "Cassette configuration",
-                    fontSize = 30.sp,
+                    text = "Clic Clac " + BuildConfig.VERSION_NAME
                 )
-                Divider(modifier = modifier.padding(vertical = 5.dp))
             }
+        }
 
-            Text(
-                text = "Development delay: $cassetteDevelopmentDelay"
-            )
+        OutlinedCard(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(all = 5.dp)
+                .clickable(enabled = true) { onCassetteClick() }
+        ) {
+            Column(
+                modifier = modifier.padding(all = 10.dp)
+            ) {
+
+                Column(
+                    modifier = modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Cassette configuration",
+                        fontSize = 30.sp,
+                    )
+                    Divider(modifier = modifier.padding(vertical = 5.dp))
+                }
+
+                Text(
+                    text = "Development delay: $cassetteDevelopmentDelay"
+                )
+            }
         }
     }
 }

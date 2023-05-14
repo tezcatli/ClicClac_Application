@@ -30,6 +30,8 @@ class CliClacApplication: Application(), Configuration.Provider {
 
         container = AppDataContainer(this)
 
+        container.pendingPhotoNotificationManager.scheduleNextNotification()
+
         super.onCreate()
 
 
