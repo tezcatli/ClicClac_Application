@@ -103,9 +103,6 @@ fun ClicClacApp(
                                 }
                             }
 
-
-
-
                             Image(painter = painterResource(id = R.drawable.clicclac_logo_v2),
                                 "",
                                 colorFilter = if (isSystemInDarkTheme()) {
@@ -118,9 +115,9 @@ fun ClicClacApp(
                                     ColorFilter.colorMatrix(ColorMatrix(colorMatrixDark))
                                 } else {
                                     val colorMatrixLight = floatArrayOf(
-                                        1f, 0f, 0f, 0f, 255f,
-                                        0f, 1f, 0f, 0f, 255f,
-                                        0f, 0f, 1f, 0f, 255f,
+                                        1f, 0f, 0f, 0f, 0f,
+                                        0f, 1f, 0f, 0f, 0f,
+                                        0f, 0f, 1f, 0f, 0f,
                                         0f, 0f, 0f, 1f, 0f
                                     )
                                     ColorFilter.colorMatrix(ColorMatrix(colorMatrixLight))

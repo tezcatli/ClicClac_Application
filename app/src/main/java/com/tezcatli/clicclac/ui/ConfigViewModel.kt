@@ -1,7 +1,6 @@
 package com.tezcatli.clicclac.ui
 
 
-import android.content.pm.PackageManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tezcatli.clicclac.settings.SettingsRepository
@@ -12,7 +11,6 @@ import kotlinx.coroutines.flow.stateIn
 
 class ConfigViewModel(
     private val settingsRepository: SettingsRepository,
-    private val packageManager: PackageManager
 ) : ViewModel() {
 
     val cassetteDevelopmentDelayState: StateFlow<String> =

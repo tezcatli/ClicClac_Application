@@ -58,7 +58,7 @@ fun ConfigScreen2(
                 .padding(all = 5.dp),
                 horizontalArrangement = Arrangement.Center) {
                 Text(
-                    text = "Clic Clac " + BuildConfig.VERSION_NAME
+                    text = "Clic Clac " + BuildConfig.VERSION_NAME + " (build " + BuildConfig.VERSION_CODE + " )"
                 )
             }
         }
