@@ -16,18 +16,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.sharp.Cached
+import androidx.compose.material.icons.outlined.Cached
+import androidx.compose.material.icons.outlined.Error
+import androidx.compose.material.icons.outlined.FlashAuto
+import androidx.compose.material.icons.outlined.FlashOff
+import androidx.compose.material.icons.outlined.FlashOn
+import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.sharp.Camera
-import androidx.compose.material.icons.sharp.Error
-import androidx.compose.material.icons.sharp.FlashAuto
-import androidx.compose.material.icons.sharp.FlashOff
-import androidx.compose.material.icons.sharp.FlashOn
-import androidx.compose.material.icons.sharp.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults.buttonColors
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +43,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -53,14 +54,15 @@ import com.tezcatli.clicclac.AppViewModelProvider
 import com.tezcatli.clicclac.Camera.CameraManager
 
 
-fun flashModeIcon(flashMode : Int) : ImageVector {
-    return when (flashMode)  {
-        ImageCapture.FLASH_MODE_OFF -> Icons.Sharp.FlashOff
-        ImageCapture.FLASH_MODE_AUTO -> Icons.Sharp.FlashAuto
-        ImageCapture.FLASH_MODE_ON -> Icons.Sharp.FlashOn
-        else -> Icons.Sharp.Error
+fun flashModeIcon(flashMode: Int): ImageVector {
+    return when (flashMode) {
+        ImageCapture.FLASH_MODE_OFF -> Icons.Outlined.FlashOff
+        ImageCapture.FLASH_MODE_AUTO -> Icons.Outlined.FlashAuto
+        ImageCapture.FLASH_MODE_ON -> Icons.Outlined.FlashOn
+        else -> Icons.Outlined.Error
     }
 }
+
 @Composable
 fun CameraScreen(
     viewModel: CameraViewModel = viewModel(factory = AppViewModelProvider.Factory),
@@ -77,6 +79,7 @@ fun CameraScreen(
         flashMode = viewModel.flashMode,
         updateFlashMode = viewModel::updateFlashMode,
         isShutterOpen = viewModel.isShutterOpen,
+        shotsRemaining = viewModel.shotsRemaining,
         setSurface = viewModel::setSurface,
         bind = viewModel::bind,
         onConfig = onConfig,
@@ -85,6 +88,7 @@ fun CameraScreen(
 }
 
 
+@OptIn(ExperimentalTextApi::class)
 @Composable
 fun CameraScreen2(
     isInitialized: Boolean = false,
@@ -93,9 +97,10 @@ fun CameraScreen2(
     lensDirection: Int = CameraSelector.LENS_FACING_BACK,
     setLens: (CameraSelector) -> Unit = {},
     updateLensDirection: (Int) -> Unit = {},
-    flashMode : Int = ImageCapture.FLASH_MODE_OFF,
-    updateFlashMode : (Int) -> Unit = {},
-    isShutterOpen : Boolean= true,
+    flashMode: Int = ImageCapture.FLASH_MODE_AUTO,
+    updateFlashMode: (Int) -> Unit = {},
+    isShutterOpen: Boolean = true,
+    shotsRemaining: Int = 0,
     setSurface: (PreviewView) -> Unit = {},
     bind: (LifecycleOwner) -> Unit = {},
     onConfig: () -> Unit = {},
@@ -120,7 +125,7 @@ fun CameraScreen2(
         }
 
         LaunchedEffect(isShutterOpen) {
-            if (! isShutterOpen) {
+            if (!isShutterOpen) {
                 scale.animateTo(
                     0f,
                     animationSpec = tween(250),
@@ -146,66 +151,59 @@ fun CameraScreen2(
                         .fillMaxSize()
                         .graphicsLayer(alpha = scale.value)
                 )
-                //          Box(
-                //              contentAlignment = Alignment.TopCenter, modifier = Modifier
-                //                  .fillMaxSize()
-                //                  .background(Color.Transparent)
-                //          ) {
-                //              Text("TOTO")
-                //          }
+
                 Column(
                     Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Box(modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentSize(Alignment.TopStart)) {
-                        IconButton(onClick = { flashlightMenuExpanded = true }) {
-                            Icon(
-                                imageVector = flashModeIcon(flashMode),
-                                tint = Color.White,
-                                contentDescription = "Localized description"
-                            )
-                        }
 
-                        MaterialTheme(
-                            colorScheme = MaterialTheme.colorScheme.copy(surface = Color.Transparent, surfaceTint = Color.Transparent)
-                        ) {
-                            DropdownMenu(
-                                modifier = Modifier.background(Color.Transparent),
-                                expanded = flashlightMenuExpanded,
-                                onDismissRequest = { flashlightMenuExpanded = false }
-                            ) {
-                                IconButton(onClick = {
-                                    updateFlashMode(ImageCapture.FLASH_MODE_OFF)
-                                    flashlightMenuExpanded = false
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Sharp.FlashOff,
-                                        tint = Color.White,
-                                        contentDescription = "Localized description"
-                                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column()
+                        {
+                            IconButton(onClick = {
+                                flashlightMenuExpanded = !flashlightMenuExpanded
+                            }) {
+                                Icon(
+                                    imageVector = flashModeIcon(flashMode),
+                                    tint = Color.White,
+                                    contentDescription = "Localized description"
+                                )
+                            }
+
+                            if (flashlightMenuExpanded) {
+
+                                listOf(
+                                    ImageCapture.FLASH_MODE_OFF,
+                                    ImageCapture.FLASH_MODE_AUTO,
+                                    ImageCapture.FLASH_MODE_ON
+                                ).forEach {
+                                    if (flashMode != it)
+
+                                        IconButton(onClick = {
+                                            updateFlashMode(it)
+                                            flashlightMenuExpanded = false
+                                        }) {
+                                            Icon(
+                                                imageVector = flashModeIcon(it),
+                                                tint = Color.White,
+                                                contentDescription = "Localized description"
+                                            )
+                                        }
                                 }
-                                IconButton(onClick = {
-                                    updateFlashMode(ImageCapture.FLASH_MODE_AUTO)
-                                    flashlightMenuExpanded = false
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Sharp.FlashAuto,
-                                        tint = Color.White,
-                                        contentDescription = "Localized description"
-                                    )
-                                }
-                                IconButton(onClick = {
-                                    updateFlashMode(ImageCapture.FLASH_MODE_ON)
-                                    flashlightMenuExpanded = false
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Sharp.FlashOn,
-                                        tint = Color.White,
-                                        contentDescription = "Localized description"
-                                    )
-                                }
+                            }
+                        }
+                        Column(modifier = Modifier
+                            .padding(top = 10.dp)
+                            .padding(end = 10.dp)) {
+                            Box {
+                                Text(
+                                    shotsRemaining.toString(), fontWeight = FontWeight.Bold,
+                                    fontSize = 24.sp,
+                                    color = if (shotsRemaining > 0) Color.White else Color.Red,
+                                )
                             }
                         }
                     }
@@ -255,7 +253,7 @@ fun CameraScreen2(
                             },
                             content = {
                                 Icon(
-                                    imageVector = Icons.Sharp.Cached,
+                                    imageVector = Icons.Outlined.Cached,
                                     contentDescription = "Font / Back",
                                     tint = Color.White,
                                     modifier = Modifier
@@ -267,7 +265,7 @@ fun CameraScreen2(
 
                         IconButton(
                             onClick = {
-                                if (isShutterOpen) {
+                                if (isShutterOpen && shotsRemaining > 0) {
                                     onCapture()
                                 }
                             },
@@ -275,7 +273,8 @@ fun CameraScreen2(
                                 Icon(
                                     imageVector = Icons.Sharp.Camera,
                                     contentDescription = "Take picture",
-                                    tint = Color.White,
+                                    tint = if (shotsRemaining > 0)
+                                        Color.White else Color.Red,
                                     modifier = Modifier
                                         .size(100.dp)
                                         .padding(1.dp)
@@ -291,7 +290,7 @@ fun CameraScreen2(
                             },
                             content = {
                                 Icon(
-                                    imageVector = Icons.Sharp.Menu,
+                                    imageVector = Icons.Outlined.Menu,
                                     contentDescription = "Config",
                                     tint = Color.White,
                                     modifier = Modifier

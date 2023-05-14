@@ -1,13 +1,13 @@
 package com.tezcatli.clicclac.ui
 
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedCard
@@ -17,10 +17,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tezcatli.clicclac.AppViewModelProvider
+import com.tezcatli.clicclac.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,8 +31,9 @@ fun ConfigCassetteScreen(
     viewModel: ConfigCassetteViewModel = viewModel(factory = AppViewModelProvider.Factory),
     onSubmit : ()->Unit = {}
 ) {
-    Column(modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center) {
+    Column(modifier = modifier
+        .fillMaxSize()
+        .verticalScroll(rememberScrollState())) {
         ElevatedCard(modifier = Modifier.padding(all = 20.dp)) {
             Column(modifier = Modifier.padding(all = 20.dp)) {
                 // Row(horizontalArrangement = Arrangement.Center) {
@@ -50,19 +53,29 @@ fun ConfigCassetteScreen(
                 }
                 //  }
                 Text(
-                    text = DELAY_CHANGE_INSTRUCTION
-
+                    text = stringResource(id = R.string.delay_change_instruction)
                 )
+
 //val truc = ConfigViewModel::setDeadline
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
                     value = viewModel.cassetteDevelopmentDelayChange,
                     isError = !viewModel.cassetteDevelopmentDelayValid,
                     onValueChange = { change -> viewModel.validateDevelopmentDelay(change) },
-                    keyboardActions = KeyboardActions(onNext = {
-                        Log.e("TEST", "onDone")
-                    }),
-                    label = { Text("Change developpment delay") })
+
+                    label = { Text("Change development delay") })
+
+                Text(
+                    text = stringResource(id = R.string.number_of_shots_per_days_change_instruction)
+                )
+
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    value = viewModel.shotsPerDaysChange,
+                    isError = !viewModel.shotsPerDaysValid,
+                    onValueChange = { change -> viewModel.validateShotsPerDays(change) },
+
+                    label = { Text("Change number of shots per days") })
 
                 Row(
                     modifier = Modifier
@@ -71,9 +84,9 @@ fun ConfigCassetteScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Button(
-                        enabled = viewModel.cassetteDevelopmentDelayValid,
+                        enabled = viewModel.formValid,
                         onClick = {
-                            viewModel.setDevelopmentDelay()
+                            viewModel.submitForm()
                             onSubmit()
                         }) {
                         Text(text = "Submit")
@@ -84,10 +97,3 @@ fun ConfigCassetteScreen(
     }
 }
 
-val DELAY_CHANGE_INSTRUCTION: String = """
-Type a number and a duration.
-Duration can be: minute, hour, day, month, year
-
-Ex: "5 months" for 5 months delay
-  
-""".trimIndent()

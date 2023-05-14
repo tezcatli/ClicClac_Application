@@ -17,13 +17,16 @@ import com.tezcatli.clicclac.EscrowManager
 import com.tezcatli.clicclac.PendingPhotoNotificationManager
 import com.tezcatli.clicclac.helpers.TimeHelpers
 import com.tezcatli.clicclac.settings.SettingsRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.time.Duration
 import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.Executor
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.toKotlinDuration
 
 class CameraViewModel(
     private val executor: Executor,
@@ -35,6 +38,8 @@ class CameraViewModel(
 
 
     private var cassetteDevelopmentDelay = 0.hours
+    private var shotsPerDays : Int = 0
+
     var isInitialized by mutableStateOf(false)
 
 
@@ -44,9 +49,11 @@ class CameraViewModel(
 
     var listLens = mutableStateListOf<CameraManager.Lens>()
 
-    var flashMode by mutableStateOf(ImageCapture.FLASH_MODE_OFF)
+    var flashMode by mutableStateOf(ImageCapture.FLASH_MODE_AUTO)
 
-    var shootCount by mutableStateOf(0)
+    var shotsRemaining by mutableStateOf(0)
+    var shotsInDay by mutableStateOf(0)
+    var lastShotTimeStamp by mutableStateOf(ZonedDateTime.parse("1970-01-01T00:00:00+00:00"))
 
     var isShutterOpen by mutableStateOf(true)
 
@@ -55,7 +62,7 @@ class CameraViewModel(
     fun takePhoto() {
         isShutterOpen = false
         cameraManager.takePhoto { imageCapture ->
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(executor.asCoroutineDispatcher()) {
 
 
                 val dateTime = ZonedDateTime.now()
@@ -95,6 +102,12 @@ class CameraViewModel(
                                 Log.e("CLICLAC", "Photo shoot ")
 
                                 pendingPhotoNotificationManager.scheduleNextNotification(true)
+
+                                addShot()
+                                viewModelScope.launch(executor.asCoroutineDispatcher()) {
+                                    settingsRepository.setShotsInDay(shotsInDay)
+                                    settingsRepository.setLastShotTimeStamp(ZonedDateTime.now().toString())
+                                }
                             } catch (e: Exception) {
                                 Log.e("CLICCLAC", "Caught exception $e")
                             } finally {
@@ -111,7 +124,22 @@ class CameraViewModel(
     }
 
     fun bind(lifecycleOwner: LifecycleOwner) {
-        cameraManager.bind(lifecycleOwner, cameraSelector)
+        var tryAgain = true
+
+        while (tryAgain && listLens.isNotEmpty()) {
+            tryAgain = false
+            try {
+                cameraManager.bind(lifecycleOwner, cameraSelector)
+            } catch (e: java.lang.IllegalArgumentException) {
+                Log.e("CLICCLAC", "Unable to intialize camera $cameraSelector , removing it")
+            //    if (e.message == "Provided camera selector unable to resolve a camera for the given use case") {
+                    listLens.removeIf {
+                        it.selector == cameraSelector
+                    }
+                    tryAgain = true
+             //   }
+            }
+        }
     }
 
 
@@ -146,22 +174,60 @@ class CameraViewModel(
         this.flashMode = flashMode
     }
 
+
+
+    @Synchronized
+     fun addShot() {
+        shotsInDay ++
+        shotsRemaining = shotsPerDays - shotsInDay
+    }
+
+
+    @Synchronized
+    fun resetShot() {
+        shotsInDay = 0
+        shotsRemaining = shotsPerDays - shotsInDay
+    }
+
     init {
         viewModelScope.launch {
             cassetteDevelopmentDelay = TimeHelpers.stringToDuration(
-                settingsRepository.getCassetteDevelopmentDelayF().filterNotNull().first()
+                settingsRepository.getCassetteDevelopmentDelayF().first()
             )
-        }
 
-        cameraManager.waitForInitialization {
-            listLens.clear()
-            cameraManager.listLens().forEach {
-                if (it.direction == lensDirection) {
-                    listLens.add(it)
+            shotsPerDays = settingsRepository.getShotsPerDaysF().first()
+            shotsInDay = settingsRepository.getShotsInDayF().first()
+            lastShotTimeStamp =
+                ZonedDateTime.parse(settingsRepository.getLastShotTimeStampF().first())
+
+            val now = ZonedDateTime.now()
+
+            if (lastShotTimeStamp < now.truncatedTo(ChronoUnit.DAYS)) {
+                resetShot()
+//                settingsRepository.setShotsInDay(shotsInDay)
+            }
+
+            shotsRemaining = shotsPerDays - shotsInDay
+
+            viewModelScope.launch {
+
+                delay(Duration.between(now, now.truncatedTo(ChronoUnit.DAYS).plus(1, ChronoUnit.DAYS)).toKotlinDuration())
+
+                resetShot()
+            }
+
+            //escrowManager
+
+            cameraManager.waitForInitialization {
+                listLens.clear()
+                cameraManager.listLens().forEach {
+                    if (it.direction == lensDirection) {
+                        listLens.add(it)
+                    }
+
+
+                    isInitialized = true
                 }
-
-
-                isInitialized = true
             }
         }
     }

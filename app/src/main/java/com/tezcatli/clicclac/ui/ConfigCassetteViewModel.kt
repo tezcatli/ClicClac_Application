@@ -19,27 +19,51 @@ class ConfigCassetteViewModel(
     var cassetteDevelopmentDelayChange by mutableStateOf("")
     var cassetteDevelopmentDelayValid by mutableStateOf(false)
 
+    var shotsPerDaysChange by mutableStateOf("")
+    var shotsPerDaysValid by mutableStateOf(false)
+
+    var formValid by mutableStateOf(false)
 
     fun validateDevelopmentDelay(deadline : String) {
         TimeHelpers.stringToDuration(deadline).also {
             cassetteDevelopmentDelayValid = (it != 0.hours)
             cassetteDevelopmentDelayChange = deadline
         }
+        validateForm()
     }
 
-    fun setDevelopmentDelay() {
-        if (cassetteDevelopmentDelayValid) {
+    fun validateShotsPerDays(change : String) {
+        TimeHelpers.stringToDuration(change).also {
+            shotsPerDaysValid = change.toIntOrNull() != null
+            shotsPerDaysChange = change
+        }
+        validateForm()
+    }
+
+    fun validateForm() {
+        formValid = cassetteDevelopmentDelayValid && shotsPerDaysValid
+    }
+
+    fun submitForm() {
+        if (formValid) {
             viewModelScope.launch {
                 settingsRepository.setCassetteDevelopmentDelay(cassetteDevelopmentDelayChange)
+                settingsRepository.setShotsPerDays(shotsPerDaysChange.toInt())
             }
         }
     }
-
     init {
         viewModelScope.launch {
             cassetteDevelopmentDelayChange =
                     settingsRepository.getCassetteDevelopmentDelayF().filterNotNull().first()
             cassetteDevelopmentDelayValid = TimeHelpers.stringToDuration(cassetteDevelopmentDelayChange) != 0.hours
+
+            shotsPerDaysChange =
+                settingsRepository.getShotsPerDaysF().filterNotNull().first().toString()
+            shotsPerDaysValid = shotsPerDaysChange.toIntOrNull() != null
+
+            validateForm()
+
         }
     }
 }

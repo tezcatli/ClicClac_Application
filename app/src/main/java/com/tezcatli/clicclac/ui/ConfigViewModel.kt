@@ -20,7 +20,12 @@ class ConfigViewModel(
             initialValue = ""
         )
 
-  //  val versionName = packageManager.
+    val shotsPerDays: StateFlow<Int> =
+        settingsRepository.getShotsPerDaysF().stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+            initialValue = 10
+        )
 
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L

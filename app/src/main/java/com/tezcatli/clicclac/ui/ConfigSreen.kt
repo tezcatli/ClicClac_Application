@@ -30,11 +30,14 @@ fun ConfigScreen(
     onCassetteClick: () -> Unit = {}
 ) {
     val cassetteDevelopmentDelayState by viewModel.cassetteDevelopmentDelayState.collectAsState()
+    val shotsPerDays by viewModel.shotsPerDays.collectAsState()
+
 
     ConfigScreen2(
         modifier = modifier,
         onCassetteClick = onCassetteClick,
         cassetteDevelopmentDelay = cassetteDevelopmentDelayState,
+        shotsPerDays = shotsPerDays
         //   versionName = viewModel
     )
 }
@@ -44,7 +47,8 @@ fun ConfigScreen(
 fun ConfigScreen2(
     modifier: Modifier = Modifier,
     onCassetteClick: () -> Unit = {},
-    cassetteDevelopmentDelay: String = ""
+    cassetteDevelopmentDelay: String = "" ,
+    shotsPerDays: Int = 10
 ) {
     //var textValue by remember { mutableStateOf("") }
 
@@ -86,6 +90,9 @@ fun ConfigScreen2(
 
                 Text(
                     text = "Development delay: $cassetteDevelopmentDelay"
+                )
+                Text(
+                    text = "Shots per days: $shotsPerDays"
                 )
             }
         }

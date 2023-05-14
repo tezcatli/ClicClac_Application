@@ -16,5 +16,7 @@
         No personal data are collected and transferred outside of this phone
     </string>
     <string name="permissions_rationale_title">Rationale on permissions</string>
+    <string name="delay_change_instruction">Type a number and a duration (minute, hour, day, month, year)\\n\nEx: \"5 months\" for 5 months delay</string>
+    <string name="number_of_shots_per_days_change_instruction">Type a number to set the maximum number of shots allowed per days</string>
 
 </resources>
