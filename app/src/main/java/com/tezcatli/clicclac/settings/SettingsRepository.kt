@@ -4,23 +4,26 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
 
 
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
 
-    fun getCassetteDevelopmentDelayF(): Flow<String> {
+    fun getCassetteDevelopmentDelayF(): Flow<Long> {
         return dataStore.data.map { preferences ->
             // No type safety.
-            preferences[CASSETTE_DEVELOPMENT_DELAY] ?: "7 days"
+            preferences[CASSETTE_DEVELOPMENT_DELAY] ?: 7L.days.inWholeSeconds
         }
     }
 
-    suspend fun setCassetteDevelopmentDelay(delay: String) {
+    suspend fun setCassetteDevelopmentDelay(delay: Duration) {
         dataStore.edit { settings ->
-            settings[CASSETTE_DEVELOPMENT_DELAY] = delay
+            settings[CASSETTE_DEVELOPMENT_DELAY] = delay.inWholeSeconds
         }
     }
 
@@ -64,7 +67,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
     }
 
     companion object Keys {
-        val CASSETTE_DEVELOPMENT_DELAY = stringPreferencesKey("CASSETTE_DEVELOPMENT_DELAY")
+        val CASSETTE_DEVELOPMENT_DELAY = longPreferencesKey("CASSETTE_DEVELOPMENT_DELAY")
         val SHOTS_PER_DAYS = intPreferencesKey("SHOTS_PER_DAYS")
         val SHOTS_IN_DAY = intPreferencesKey("SHOTS_IN_DAY")
         val LAST_SHOT_TIMESTAMP = stringPreferencesKey("LAST_SHOT_TIMESTAMP")

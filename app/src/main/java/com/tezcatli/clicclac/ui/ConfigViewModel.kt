@@ -13,11 +13,11 @@ class ConfigViewModel(
     private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
-    val cassetteDevelopmentDelayState: StateFlow<String> =
+    val cassetteDevelopmentDelayState: StateFlow<Long> =
         settingsRepository.getCassetteDevelopmentDelayF().stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-            initialValue = ""
+            initialValue = 0
         )
 
     val shotsPerDays: StateFlow<Int> =

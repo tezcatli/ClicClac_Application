@@ -1,0 +1,75 @@
+<resources>
+    <string name="app_name">ClicClac</string>
+    <string name="take_photo">Prendre une photo</string>
+    <string name="start_capture">Démarrer une prise de vue</string>
+    <string name="stop_capture">Arréter la prise de vue</string>
+    <string name="title_activity_main">Clic Clac</string>
+    <string name="switch_to_camera">Appareil photo</string>
+    <string name="channel_name">Clic Clac</string>
+    <string name="channel_description">Notification de développements en attente</string>
+    <string name="permissions_rationale">
+        Cette application requiert les droits suivants pour fonctionner correctemment: \n
+        - Accés à l\'appareil photo (pour des raisons évidentes). \n
+        - Notifications (optionnel) : Utilisé pour notifier quand des photos sont prétes à être développées. \n
+        - Stockage (obligatoire) :  Nécessaire pour stocker les photos en cours de développement. \n
+        - Géolocalisation (optionnel) : Nécessaire pour permettre la localisation des photos. \n
+        \n
+        Aucune données personnelles ne sont collectées et transférées à l\'extérieur de ce téléphone mobile.
+A    </string>
+    <string name="permissions_rationale_title">Justification des droits demandés</string>
+    <string name="delay_change_instruction">
+        Entrez un nombre et une durée (minute, hour, day, month, year))\n
+        Ex: \"5 mois\" pour une durée de 5 mois
+    </string>
+    <string name="number_of_shots_per_days_change_instruction">
+        Entrez un nombre pour définir un maximum de prises de vues par jour.
+    </string>
+    <string name="config_screen_cassette_configuration">
+        Configuration de la pellicule
+    </string>
+    <string name="config_screen_development_delay">
+        Durée du développement: {0}
+    </string>
+    <string name="config_screen_shots_per_days">
+        Nombres de prises de vue par jour: {0}
+    </string>
+    <string name="time_helpers_duration_day">
+        {0, plural,
+        =1 {jour}
+        other{jours}}
+    </string>
+    <string name="time_helpers_duration_hour">
+        {0, plural,
+        =1 {heure}
+        other{heures}}
+    </string>
+    <string name="time_helpers_duration_minute">
+        {0, plural,
+        =1 {minute}
+        other{minutes}}
+    </string>
+    <string name="time_helpers_duration_second">
+        {0, plural,
+        =1 {seconde}
+        other{secondes}}
+    </string>
+    <string name="config_cassette_screen_change_number_of_shots_per_days">Nombre de prises de vues par jour</string>
+    <string name="config_cassette_screen_change_development_delay">Durée du développement</string>
+    <string name="config_cassette_screen_submit">Soumettre</string>
+    <string name="navigation_camera">Appareil photo</string>
+    <string name="navigation_home">Clic Clac App</string>
+    <string name="navigation_settings">Paramétres</string>
+    <string name="navigation_photo_developed">Photo développée</string>
+    <string name="pending_photos_no_photos">
+        Aucune photos en attente. \n
+        Touchez l\'icône de l\'appareil photo en bas à droite de l\'écran pour prendre des photos.
+    </string>
+    <string name="pending_photos_next_photo">Prochaine photo dans\n{0,number}j {1,number,00}h {2,number,00}m {2,number,00}s</string>
+    <string name="pending_photo_less_than_1_minute">{0} {0, plural, =1 {photo} other{photos}} dans moins de 1 minute</string>
+    <string name="pending_photo_less_than_10_minute">{0} {0, plural, =1 {photo} other{photos}} dans moins de 10 minute</string>
+    <string name="pending_photo_less_than_1_hour">{0} {0, plural, =1 {photo} other{photos}} dans moins de 1 heure</string>
+    <string name="pending_photo_less_than_4_hours">{0} {0, plural, =1 {photo} other{photos}} dans moins de 4 heures </string>
+    <string name="pending_photo_less_than_1_day">{0} {0, plural, =1 {photo} other{photos}} dans moins de 1 jour</string>
+    <string name="pending_photo_less_than_1_week">{0} {0, plural, =1 {photo} other{photos}} dans moins de 1 semaine</string>
+    <string name="pending_photo_in_coming_weeks">{0} {0, plural, =1 {photo} other{photos}} dans les prochaines semaines</string>
+</resources>

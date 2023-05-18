@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -43,12 +44,12 @@ import androidx.navigation.navDeepLink
 import com.tezcatli.clicclac.R
 
 
-enum class ROUTES(val title: String) {
-    HOME("Clic Clac App"),
-    CAMERA("camera"),
-    CONFIG("Settings"),
-    CONFIGCASSETTE("Settings"),
-    PHOTO("Photo developed")
+enum class ROUTES(val title: Int) {
+    HOME(R.string.navigation_home),
+    CAMERA(R.string.navigation_camera),
+    CONFIG(R.string.navigation_settings),
+    CONFIGCASSETTE(R.string.navigation_settings),
+    PHOTO(R.string.navigation_photo_developed)
 }
 
 
@@ -98,7 +99,7 @@ fun ClicClacApp(
                                 ) {
                                     Text(
                                         textAlign = TextAlign.Center,
-                                        text = ROUTES.valueOf(currentDestination.route.toString()).title,
+                                        text = stringResource(ROUTES.valueOf(currentDestination.route.toString()).title),
                                     )
                                 }
                             }

@@ -63,7 +63,7 @@ fun ConfigCassetteScreen(
                     isError = !viewModel.cassetteDevelopmentDelayValid,
                     onValueChange = { change -> viewModel.validateDevelopmentDelay(change) },
 
-                    label = { Text("Change development delay") })
+                    label = { Text(stringResource(R.string.config_cassette_screen_change_development_delay)) })
 
                 Text(
                     text = stringResource(id = R.string.number_of_shots_per_days_change_instruction)
@@ -75,7 +75,7 @@ fun ConfigCassetteScreen(
                     isError = !viewModel.shotsPerDaysValid,
                     onValueChange = { change -> viewModel.validateShotsPerDays(change) },
 
-                    label = { Text("Change number of shots per days") })
+                    label = { Text(stringResource(R.string.config_cassette_screen_change_number_of_shots_per_days)) })
 
                 Row(
                     modifier = Modifier
@@ -89,7 +89,7 @@ fun ConfigCassetteScreen(
                             viewModel.submitForm()
                             onSubmit()
                         }) {
-                        Text(text = "Submit")
+                        Text(text = stringResource(R.string.config_cassette_screen_submit))
                     }
                 }
             }

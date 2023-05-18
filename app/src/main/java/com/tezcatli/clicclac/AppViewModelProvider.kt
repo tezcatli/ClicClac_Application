@@ -43,7 +43,8 @@ object AppViewModelProvider {
 
         initializer {
             ConfigCassetteViewModel(
-                clicClacApplication().container.settingsRepository
+                clicClacApplication().container.settingsRepository,
+                clicClacApplication().container.appContext
             )
         }
 

@@ -204,7 +204,7 @@ class CipherInputStream(
 class CipherOutputStream(
     private val outputStream: OutputStream,
     private val outputStreamProcessor: CipherOutputStreamProcessor,
-    val chunkSize: Int = 1024 * 256
+    var chunkSize: Int = 1024 * 256
 ) : OutputStream() {
 
     var plainBuffer = ByteArray(chunkSize)
@@ -253,6 +253,7 @@ class CipherOutputStream(
                 writeChunk(writeSize, writtenSize)
                 writtenSize += writeSize
             }
+            chunkSize = res
             return
         }
 

@@ -21,7 +21,6 @@ import com.tezcatli.clicclac.Camera.CameraManager
 import com.tezcatli.clicclac.EscrowManager
 import com.tezcatli.clicclac.LocationManager
 import com.tezcatli.clicclac.PendingPhotoNotificationManager
-import com.tezcatli.clicclac.helpers.TimeHelpers
 import com.tezcatli.clicclac.settings.SettingsRepository
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
@@ -33,6 +32,7 @@ import java.time.temporal.ChronoUnit
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toKotlinDuration
 
 class CameraViewModel(
@@ -237,9 +237,9 @@ class CameraViewModel(
 
     init {
         viewModelScope.launch {
-            cassetteDevelopmentDelay = TimeHelpers.stringToDuration(
-                settingsRepository.getCassetteDevelopmentDelayF().first()
-            )
+            cassetteDevelopmentDelay =
+                settingsRepository.getCassetteDevelopmentDelayF().first().seconds
+
 
             shotsPerDays = settingsRepository.getShotsPerDaysF().first()
             shotsInDay = settingsRepository.getShotsInDayF().first()
