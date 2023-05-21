@@ -83,11 +83,8 @@ fun EscrowedList(
                 Text(
                     textAlign = TextAlign.Center,
                     text = if (expired) {
-                        String.format(
-                            "%s photo %s\nClick to develop",
-                            viewModel.listBucket[0].size.toString(),
-                            viewModel.bucketsDef[0].slotName
-                        )
+                        MessageFormat.format(stringResource(viewModel.bucketsDef[0].slotName) + "\n" + stringResource(
+                                                    R.string.pending_photo_click_to_develop), viewModel.listBucket[0].size)
                     } else {
                         if (viewModel.listBucket.map { it ->
                                 it.size

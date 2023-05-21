@@ -106,7 +106,7 @@ class CameraViewModel(
                 val outputOptions =
                     ImageCapture.OutputFileOptions.Builder(ostream.outputStream).run {
                         if (task != null) {
-                              val location = Tasks.await(task)
+                            val location = Tasks.await(task)
                             this.setMetadata(
                                 ImageCapture.Metadata().apply { this.location = location })
                         }
@@ -115,8 +115,6 @@ class CameraViewModel(
 
 
                 imageCapture.flashMode = flashMode
-
-
 
 
                 imageCapture.takePicture(

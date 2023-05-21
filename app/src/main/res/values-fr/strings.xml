@@ -72,4 +72,6 @@ A    </string>
     <string name="pending_photo_less_than_1_day">{0} {0, plural, =1 {photo} other{photos}} dans moins de 1 jour</string>
     <string name="pending_photo_less_than_1_week">{0} {0, plural, =1 {photo} other{photos}} dans moins de 1 semaine</string>
     <string name="pending_photo_in_coming_weeks">{0} {0, plural, =1 {photo} other{photos}} dans les prochaines semaines</string>
+    <string name="pending_photo_ready_to_be_developed">{0} {0, plural, =1 {photo} other{photos}} prêtes à être développées</string>
+    <string name="pending_photo_click_to_develop">Cliquez pour développer</string>
 </resources>

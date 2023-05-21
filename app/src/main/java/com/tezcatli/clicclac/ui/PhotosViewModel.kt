@@ -115,15 +115,6 @@ class PhotosViewModel(
 
                     imageUriList.add(it)
 
-                    /*
-                    val source = ImageDecoder.createSource(contentResolver, it)
-
-                    try {
-                        imageBitmapList.add(ImageDecoder.decodeBitmap(source).asImageBitmap())
-                    } catch (e: Exception) {
-                        Log.e("CLICLAC", "Exception caught wile decoding image: ", e)
-                    }
-                    */
                 }
             }
         }

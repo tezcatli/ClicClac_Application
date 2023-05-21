@@ -434,12 +434,12 @@ class EscrowCipher(val context: Context) {
         return Escrow(Json.encodeToString(macResult), wrappedKey)
     }
 
-    fun getsKeyEnc(uuid: String): SecretKey {
-        return (androidKS.getEntry("sKey-$uuid-enc", null) as SecretKeyEntry).secretKey
+    fun getsKeyEnc(uuid: String): SecretKey? {
+        return (androidKS.getEntry("sKey-$uuid-enc", null) as SecretKeyEntry)?.secretKey
     }
 
-    fun getsKeyDec(uuid: String): SecretKey {
-        return (androidKS.getEntry("sKey-$uuid-dec", null) as SecretKeyEntry).secretKey
+    fun getsKeyDec(uuid: String): SecretKey? {
+        return (androidKS.getEntry("sKey-$uuid-dec", null) as SecretKeyEntry)?.secretKey
     }
 
     fun setupOutputStream(os: OutputStream, uuid: String): OutputStream {
@@ -493,6 +493,8 @@ class EscrowCipher(val context: Context) {
         }
     }
 
+
+
     fun listKeys(): List<String> {
         return androidKS.aliases().toList().map {
             if (it.startsWith("sKey-")) {
@@ -514,15 +516,17 @@ fun hex(bytes: ByteArray, len: Int = bytes.size): String? {
     return result.toString()
 }
 
-class CipherInputStreamProcessor(val uuid: String, val escrowCipher: EscrowCipher) {
+
+
+class CipherInputStreamProcessor(val key: SecretKey) {
 
     val cipher = Cipher.getInstance("AES/GCM/NoPadding")
 
-    var key : SecretKey? = null
+    ///var key : SecretKey? = null
 
 
     fun init() {
-        key = escrowCipher.getsKeyDec(uuid)
+
     }
     fun setUpBlock(iv: ByteArray) {
         val spec = GCMParameterSpec(128, iv.copyOf())
@@ -535,13 +539,6 @@ class CipherInputStreamProcessor(val uuid: String, val escrowCipher: EscrowCiphe
     fun decrypt(ciphered: ByteArray, len: Int, plain: ByteArray) : Int {
         //Log.e("CIPHER_INPUT_STREAM", "PAYLOAD = " + hex(ciphered, len)!!)
         return cipher.doFinal(ciphered, 0, len, plain)
-//        Log.e("CLICCLAC", "decrypt len = $len, returnLen = $res")
-//        if (plain[len-50] == 0xbb.toByte() &&
-//            plain[len-40] == 0xbb.toByte() &&
-//            plain[len-30] == 0xbb.toByte() &&
-//            plain[len-20] == 0xbb.toByte()) {
-//            Log.e("CLICCLAC", "last 4 bytes null (v2)")
-//        }
     }
 
 
@@ -551,14 +548,13 @@ class CipherInputStreamProcessor(val uuid: String, val escrowCipher: EscrowCiphe
     }
 }
 
-class CipherOutputStreamProcessor(val uuid: String, val escrowCipher: EscrowCipher) {
+class CipherOutputStreamProcessor(val key: SecretKey) {
     val cipher = Cipher.getInstance("AES/GCM/NoPadding")
 
-    var key : SecretKey? = null
+
 
 
     fun init() {
-        key = escrowCipher.getsKeyEnc(uuid)
     }
 
     // return IV
