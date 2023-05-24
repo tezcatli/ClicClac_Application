@@ -20,6 +20,7 @@ object AppViewModelProvider {
         initializer {
             EscrowedListViewModel(
                 clicClacApplication().container.escrowManager,
+                clicClacApplication().container.secureTime
             )
         }
 
@@ -55,25 +56,6 @@ object AppViewModelProvider {
             )
         }
 
-        /*
-        // Initializer for ItemEntryViewModel
-        initializer {
-            ItemEntryViewModel(inventoryApplication().container.itemsRepository)
-        }
-
-        // Initializer for ItemDetailsViewModel
-        initializer {
-            ItemDetailsViewModel(
-                this.createSavedStateHandle(),
-                inventoryApplication().container.itemsRepository
-            )
-        }
-
-        // Initializer for HomeViewModel
-        initializer {
-            HomeViewModel(inventoryApplication().container.itemsRepository)
-        }
-        */
     }
 }
 

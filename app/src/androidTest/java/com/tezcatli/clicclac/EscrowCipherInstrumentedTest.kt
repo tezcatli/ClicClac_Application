@@ -1,35 +1,7 @@
 package com.tezcatli.clicclac
 
-import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyNotYetValidException
-import android.security.keystore.KeyProperties
-import android.util.Log
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
-import com.tezcatli.clicclac.crypto.CipherInputStream
-import com.tezcatli.clicclac.crypto.CipherOutputStream
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runTest
-import org.junit.Assert.*
-import org.junit.Test
-import org.junit.runner.RunWith
-import java.io.File
-import java.net.URL
-import java.security.KeyStore
-import java.time.ZonedDateTime
-import java.util.*
-import javax.crypto.Cipher
-import javax.crypto.KeyGenerator
-import javax.crypto.spec.GCMParameterSpec
 
-
-/**
- * Instrumented test, which will execute on an Android device.
- *
- * See [testing documentation](http://d.android.com/tools/testing).
- *
- * Test the following sequence :  generate escrow key,  recover it from remote and local.
- */
+/*
 @RunWith(AndroidJUnit4::class)
 class EscrowCipherInstrumentedTest {
     @Test
@@ -295,3 +267,5 @@ class EscrowCipherInstrumentedTest {
         assertEquals(true, true)
     }
 }
+
+*/

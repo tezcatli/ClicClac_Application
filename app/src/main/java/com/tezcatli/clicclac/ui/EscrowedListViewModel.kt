@@ -16,6 +16,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tezcatli.clicclac.EscrowManager
 import com.tezcatli.clicclac.R
+import com.tezcatli.clicclac.SecureTime
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -45,40 +46,41 @@ data class BucketsDef(
 
 class EscrowedListViewModel(
     private val escrowManager: EscrowManager,
+    val secureTime : SecureTime,
 ) : ViewModel() {
 
     val bucketsDef = listOf(
         BucketsDef(
             (-Duration.INFINITE).rangeUntil(Duration.ZERO),
-            R.string.pending_photo_ready_to_be_developed,
+            R.string.pending_photos_ready_to_be_developed,
             { listOf("Ready", "") }),
         BucketsDef(
             0.seconds.rangeUntil(1.minutes),
-            R.string.pending_photo_less_than_1_minute,
+            R.string.pending_photos_less_than_1_minute,
             { t -> listOf(t.inWholeSeconds.toString(), "Seconds") }),
         BucketsDef(
             1.minutes.rangeUntil(10.minutes),
-            R.string.pending_photo_less_than_10_minute,
+            R.string.pending_photos_less_than_10_minute,
             { t -> listOf(t.inWholeSeconds.toString(), "Seconds") }),
         BucketsDef(
             10.minutes.rangeUntil(1.hours),
-            R.string.pending_photo_less_than_1_hour,
+            R.string.pending_photos_less_than_1_hour,
             { t -> listOf(t.inWholeMinutes.toString(), "Minutes") }),
         BucketsDef(
             1.hours.rangeUntil(4.hours),
-            R.string.pending_photo_less_than_4_hours,
+            R.string.pending_photos_less_than_4_hours,
             { t -> listOf(t.inWholeMinutes.toString(), "Minutes") }),
         BucketsDef(
             4.hours.rangeUntil(1.days),
-            R.string.pending_photo_less_than_1_day,
+            R.string.pending_photos_less_than_1_day,
             { t -> listOf(t.inWholeHours.toString(), "Hours") }),
         BucketsDef(
             1.days.rangeUntil(7.days),
-            R.string.pending_photo_less_than_1_week,
+            R.string.pending_photos_less_than_1_week,
             { t -> listOf(t.inWholeHours.toString(), "Hours") }),
         BucketsDef(
             7.days.rangeUntil(Duration.INFINITE),
-            R.string.pending_photo_in_coming_weeks,
+            R.string.pending_photos_in_coming_weeks,
             { t -> listOf(t.inWholeDays.toString(), "Days") })
     )
 

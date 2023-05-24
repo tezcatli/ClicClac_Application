@@ -64,14 +64,17 @@ A    </string>
         Aucune photos en attente. \n
         Touchez l\'icône de l\'appareil photo en bas à droite de l\'écran pour prendre des photos.
     </string>
-    <string name="pending_photos_next_photo">Prochaine photo dans\n{0,number}j {1,number,00}h {2,number,00}m {2,number,00}s</string>
-    <string name="pending_photo_less_than_1_minute">{0} {0, plural, =1 {photo} other{photos}} dans moins de 1 minute</string>
-    <string name="pending_photo_less_than_10_minute">{0} {0, plural, =1 {photo} other{photos}} dans moins de 10 minute</string>
-    <string name="pending_photo_less_than_1_hour">{0} {0, plural, =1 {photo} other{photos}} dans moins de 1 heure</string>
-    <string name="pending_photo_less_than_4_hours">{0} {0, plural, =1 {photo} other{photos}} dans moins de 4 heures </string>
-    <string name="pending_photo_less_than_1_day">{0} {0, plural, =1 {photo} other{photos}} dans moins de 1 jour</string>
-    <string name="pending_photo_less_than_1_week">{0} {0, plural, =1 {photo} other{photos}} dans moins de 1 semaine</string>
-    <string name="pending_photo_in_coming_weeks">{0} {0, plural, =1 {photo} other{photos}} dans les prochaines semaines</string>
-    <string name="pending_photo_ready_to_be_developed">{0} {0, plural, =1 {photo} other{photos}} prêtes à être développées</string>
-    <string name="pending_photo_click_to_develop">Cliquez pour développer</string>
+    <string name="pending_photos_next_photo">Prochaine photo dans\n{0,number}j {1,number,00}h {2,number,00}m {3,number,00}s</string>
+    <string name="pending_photos_less_than_1_minute">{0} {0, plural, =1 {photo} other{photos}} dans moins de 1 minute</string>
+    <string name="pending_photos_less_than_10_minute">{0} {0, plural, =1 {photo} other{photos}} dans moins de 10 minute</string>
+    <string name="pending_photos_less_than_1_hour">{0} {0, plural, =1 {photo} other{photos}} dans moins de 1 heure</string>
+    <string name="pending_photos_less_than_4_hours">{0} {0, plural, =1 {photo} other{photos}} dans moins de 4 heures </string>
+    <string name="pending_photos_less_than_1_day">{0} {0, plural, =1 {photo} other{photos}} dans moins de 1 jour</string>
+    <string name="pending_photos_less_than_1_week">{0} {0, plural, =1 {photo} other{photos}} dans moins de 1 semaine</string>
+    <string name="pending_photos_in_coming_weeks">{0} {0, plural, =1 {photo} other{photos}} dans les prochaines semaines</string>
+    <string name="pending_photos_ready_to_be_developed">{0} {0, plural, =1 {photo} other{photos}} prêtes à être développées</string>
+    <string name="pending_photos_click_to_develop">Cliquez pour développer</string>
+    <string name="pending_photos_system_clock_out_of_sync">Horloge système désynchronisée</string>
+    <string name="pending_photos_unable_to_retrieve_time_from_internet">Impossible de récupérer l\'heure depuis internet</string>
+
 </resources>

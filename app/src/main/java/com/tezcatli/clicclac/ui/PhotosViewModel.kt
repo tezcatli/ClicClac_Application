@@ -102,6 +102,8 @@ class PhotosViewModel(
             escrowManager.deleteFile(uuid)
         }
         return (uri)
+
+
     }
 
 

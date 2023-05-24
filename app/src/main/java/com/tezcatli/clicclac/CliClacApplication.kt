@@ -49,6 +49,10 @@ class CliClacApplication: Application(), Configuration.Provider {
             .build()
     }
 
+    companion object {
+        public val DO_CRYPTO = false
+    }
+
 
 }
 

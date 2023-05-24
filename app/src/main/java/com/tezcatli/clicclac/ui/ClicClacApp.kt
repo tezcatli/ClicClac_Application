@@ -19,6 +19,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -62,7 +64,11 @@ fun ClicClacApp(
 ) {
     var fullScreen by remember { mutableStateOf(false) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
@@ -166,6 +172,7 @@ fun ClicClacApp(
                 })
             ) {
                 EscrowedList(
+                    snackbarHostState = snackbarHostState,
                     onClickExpired = { navController.navigate(ROUTES.PHOTO.name) }
                     //itemList = listAllState.itemList,
                     //    modifier = modifier.padding(innerPadding),

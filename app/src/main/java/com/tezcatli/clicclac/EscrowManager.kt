@@ -41,9 +41,11 @@ class EscrowManager(private val appContext: Context) {
 
 
     suspend fun init(url: URL, onReady: () -> Unit) {
-        withContext(Dispatchers.IO) {
-            cipherEscrow.init(url)
-            cleanUp()
+        if (CliClacApplication.DO_CRYPTO) {
+            withContext(Dispatchers.IO) {
+                cipherEscrow.init(url)
+                cleanUp()
+            }
         }
         onReady()
 
@@ -51,8 +53,10 @@ class EscrowManager(private val appContext: Context) {
 
 
     suspend fun init(url: URL) {
-        cipherEscrow.init(url)
-        cleanUp()
+        if (CliClacApplication.DO_CRYPTO) {
+            cipherEscrow.init(url)
+            cleanUp()
+        }
     }
 
     companion object {
@@ -70,19 +74,26 @@ class EscrowManager(private val appContext: Context) {
     suspend fun add(dateTime: ZonedDateTime): String {
         val uuid = UUID.randomUUID().toString()
 
-        val escrow = cipherEscrow.escrow(dateTime, uuid)
+        if (CliClacApplication.DO_CRYPTO) {
 
-        databaseEscrow.escrowDbDao()
-            .insertAll(EscrowDbEntry(uuid, dateTime, escrow.token, escrow.wrappedKey))
+            val escrow = cipherEscrow.escrow(dateTime, uuid)
 
+            databaseEscrow.escrowDbDao()
+                .insertAll(EscrowDbEntry(uuid, dateTime, escrow.token, escrow.wrappedKey))
+
+        } else {
+            databaseEscrow.escrowDbDao()
+                .insertAll(EscrowDbEntry(uuid, dateTime, "", ByteArray(0)))
+        }
         return uuid
     }
 
     suspend fun delete(uuid: String) {
 
         databaseEscrow.escrowDbDao().deleteById(uuid)
-        cipherEscrow.deleteKey(uuid)
-
+        if (CliClacApplication.DO_CRYPTO) {
+            cipherEscrow.deleteKey(uuid)
+        }
     }
 
     suspend fun listExpired(): List<EscrowDbEntry> {
@@ -140,20 +151,29 @@ class EscrowManager(private val appContext: Context) {
         lateinit var inputStream: InputStream
 
         fun build(): EInputStream {
-            inputStream = File(appContext.filesDir, fileName).inputStream().let {
-                DataInputStream(it).run {
-                    token = readUTF()
-                }
+            if (CliClacApplication.DO_CRYPTO) {
+                inputStream = File(appContext.filesDir, fileName).inputStream().let {
+                    DataInputStream(it).run {
+                        token = readUTF()
+                    }
 
-                val key = cipherEscrow.getsKeyDec(uuid)
-                CipherInputStream(it, CipherInputStreamProcessor(key!!)).run {
+                    val key = cipherEscrow.getsKeyDec(uuid)
+                    CipherInputStream(it, CipherInputStreamProcessor(key!!)).run {
+                        DataInputStream(this).run {
+                            streamName = readUTF()
+                        }
+                        this
+                    }
+                }
+                return this
+            } else {
+                inputStream = File(appContext.filesDir, fileName).inputStream().apply {
                     DataInputStream(this).run {
                         streamName = readUTF()
                     }
-                    this
                 }
+                return this
             }
-            return this
         }
     }
 
@@ -175,29 +195,39 @@ class EscrowManager(private val appContext: Context) {
        // lateinit var uuid : String
 
         suspend fun build(): EOutputStream {
-            val token = databaseEscrow.escrowDbDao().findById(uuid).token
+            if (CliClacApplication.DO_CRYPTO) {
+                val token = databaseEscrow.escrowDbDao().findById(uuid).token
 
 
-            outputStream = File(appContext.filesDir, filename).outputStream().let {
+                outputStream = File(appContext.filesDir, filename).outputStream().let {
 
-                DataOutputStream(it).run {
-                    writeUTF(token)
-                    flush()
+                    DataOutputStream(it).run {
+                        writeUTF(token)
+                        flush()
+                    }
+
+                    val key = cipherEscrow.getsKeyEnc(uuid)
+
+                    CipherOutputStream(
+                        it,
+                        CipherOutputStreamProcessor(key!!)
+                    ).apply {
+                        DataOutputStream(this).run {
+                            writeUTF(streamName)
+                            flush()
+                        }
+                    }
                 }
-
-                val key = cipherEscrow.getsKeyEnc(uuid)
-
-                CipherOutputStream(
-                    it,
-                    CipherOutputStreamProcessor(key!!)
-                ).apply {
+                return this
+            } else {
+                outputStream = File(appContext.filesDir, filename).outputStream().apply {
                     DataOutputStream(this).run {
                         writeUTF(streamName)
                         flush()
                     }
                 }
+                return this
             }
-            return this
         }
     }
 }

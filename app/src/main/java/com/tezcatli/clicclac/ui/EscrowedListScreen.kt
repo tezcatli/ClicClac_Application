@@ -14,14 +14,17 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,7 +33,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tezcatli.clicclac.AppViewModelProvider
 import com.tezcatli.clicclac.R
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.time.ZonedDateTime
 import kotlin.time.Duration.Companion.seconds
@@ -49,10 +55,13 @@ data class Bucket(
 fun EscrowedList(
     modifier: Modifier = Modifier,
     viewModel: EscrowedListViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    snackbarHostState: SnackbarHostState,
     onClickExpired: () -> Unit = {}
 ) {
     Log.e("CLICCLAC", "RECOMPOSE ESCROWED LIST ")
 
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
 
     Column {
@@ -61,9 +70,24 @@ fun EscrowedList(
         OutlinedCard(
             modifier = modifier
                 .padding(horizontal = 20.dp, vertical = 5.dp)
-                .clickable() {
+                .clickable {
                     if (expired) {
-                        onClickExpired()
+                        coroutineScope.launch {
+                            try {
+                                var isSynchronized = false
+                                withContext(Dispatchers.IO) {
+                                    isSynchronized = viewModel.secureTime.checkSync()
+                                }
+                                if (!isSynchronized) {
+                                    snackbarHostState.showSnackbar(context.getString(R.string.pending_photos_system_clock_out_of_sync))
+                                } else {
+                                    onClickExpired()
+                                }
+                            } catch (e: Exception) {
+                                snackbarHostState.showSnackbar(context.getString(R.string.pending_photos_unable_to_retrieve_time_from_internet))
+                                Log.e("CLICCLAC", e.toString())
+                            }
+                        }
                     }
                 },
             colors = CardDefaults.run {
@@ -83,15 +107,24 @@ fun EscrowedList(
                 Text(
                     textAlign = TextAlign.Center,
                     text = if (expired) {
-                        MessageFormat.format(stringResource(viewModel.bucketsDef[0].slotName) + "\n" + stringResource(
-                                                    R.string.pending_photo_click_to_develop), viewModel.listBucket[0].size)
+                        MessageFormat.format(
+                            stringResource(viewModel.bucketsDef[0].slotName) + "\n" + stringResource(
+                                R.string.pending_photos_click_to_develop
+                            ), viewModel.listBucket[0].size
+                        )
                     } else {
                         if (viewModel.listBucket.map { it ->
                                 it.size
                             }.sum() != 0) {
 
                             viewModel.nextEscrow.toComponents() { days, hours, minutes, seconds, _ ->
-                                MessageFormat.format(stringResource(id = R.string.pending_photos_next_photo), days, hours, minutes, seconds)
+                                MessageFormat.format(
+                                    stringResource(id = R.string.pending_photos_next_photo),
+                                    days,
+                                    hours,
+                                    minutes,
+                                    seconds
+                                )
 
 //                                MessageFormat.format(
 //                                    "{0,number,00} {1} {2} {3} {4} {5} {6,number,##} {7}",
@@ -141,7 +174,9 @@ fun EscrowedList(
                         ) {
                             Text(
                                 text = MessageFormat.format(
-                                    stringResource(id = viewModel.bucketsDef[index].slotName), viewModel.listBucket[index].size)
+                                    stringResource(id = viewModel.bucketsDef[index].slotName),
+                                    viewModel.listBucket[index].size
+                                )
                             )
                         }
                     }
