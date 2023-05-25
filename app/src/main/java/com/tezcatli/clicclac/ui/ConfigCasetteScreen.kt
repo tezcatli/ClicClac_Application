@@ -20,15 +20,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.tezcatli.clicclac.AppViewModelProvider
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.tezcatli.clicclac.R
 
 @OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun ConfigCassetteScreen(
     modifier : Modifier = Modifier,
-    viewModel: ConfigCassetteViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    viewModel: ConfigCassetteViewModel = hiltViewModel(),
     onSubmit : ()->Unit = {}
 ) {
     Column(modifier = modifier

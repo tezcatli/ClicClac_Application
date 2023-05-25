@@ -13,6 +13,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tezcatli.clicclac.EscrowDbEntry
 import com.tezcatli.clicclac.EscrowManager
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filterNotNull
@@ -22,9 +23,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.File
 import java.nio.file.StandardCopyOption
+import javax.inject.Inject
 
 
-class PhotosViewModel(
+@HiltViewModel
+class PhotosViewModel @Inject constructor(
     private val escrowManager: EscrowManager,
     val contentResolver: ContentResolver
 ) : ViewModel() {

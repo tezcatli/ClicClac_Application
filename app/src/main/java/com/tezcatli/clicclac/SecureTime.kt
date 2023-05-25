@@ -1,6 +1,5 @@
 package com.tezcatli.clicclac
 
-import android.content.Context
 import android.os.SystemClock.elapsedRealtime
 import java.net.DatagramPacket
 import java.net.DatagramSocket
@@ -9,12 +8,15 @@ import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 
 
-class SecureTime(context: Context) {
+@Singleton
+class SecureTime @Inject constructor() {
     fun byteArrayToNumber(buffer: ByteArray): ULong {
 
         var register: ULong = 0UL
@@ -100,7 +102,7 @@ class SecureTime(context: Context) {
 
 
 
-
+/*
     companion object {
         @Volatile
         private var Instance: SecureTime? = null
@@ -110,5 +112,6 @@ class SecureTime(context: Context) {
             }
         }
     }
+    */
 }
 

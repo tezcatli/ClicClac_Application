@@ -8,13 +8,14 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.work.Configuration
 import androidx.work.DelegatingWorkerFactory
+import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
-class CliClacApplication: Application(), Configuration.Provider {
-    //lateinit var escrowManager : EscrowManager
+@HiltAndroidApp
+class CliClacApplication : Application(), Configuration.Provider {
 
-    lateinit var container: AppContainer
+    @Inject lateinit var pendingPhotoNotificationManager: PendingPhotoNotificationManager
 
-    //val dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
     override fun onCreate() {
 
@@ -28,19 +29,16 @@ class CliClacApplication: Application(), Configuration.Provider {
         )
 
 
-        container = AppDataContainer(this)
-
-        container.pendingPhotoNotificationManager.scheduleNextNotification()
-
         super.onCreate()
 
+        pendingPhotoNotificationManager.scheduleNextNotification()
 
     }
 
 
     override fun getWorkManagerConfiguration(): Configuration {
         val myWorkerFactory = DelegatingWorkerFactory()
-        myWorkerFactory.addFactory(NotificationWorkerFactory(container.pendingPhotoNotificationManager))
+        myWorkerFactory.addFactory(NotificationWorkerFactory(pendingPhotoNotificationManager))
         // Add here other factories that you may need in your application
 
         return Configuration.Builder()

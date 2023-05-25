@@ -29,8 +29,10 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.tezcatli.clicclac.ui.ClicClacApp
 import com.tezcatli.clicclac.ui.theme.ClicClacTheme
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.net.URL
+import javax.inject.Inject
 
 
 data class PermissionResult (
@@ -41,7 +43,10 @@ data class PermissionResult (
 
 
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject lateinit var escrowManager: EscrowManager
 
     private val listPermissions =  buildList {
         add(android.Manifest.permission.CAMERA)
@@ -71,7 +76,7 @@ class MainActivity : ComponentActivity() {
 
 
         lifecycleScope.launch {
-            (application as CliClacApplication).container.escrowManager.init(
+            escrowManager.init(
                 URL("http://10.0.2.2:5000"),
                 ::onReady
             )

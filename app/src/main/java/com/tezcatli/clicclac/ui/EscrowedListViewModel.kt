@@ -17,6 +17,7 @@ import androidx.lifecycle.viewModelScope
 import com.tezcatli.clicclac.EscrowManager
 import com.tezcatli.clicclac.R
 import com.tezcatli.clicclac.SecureTime
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
+import javax.inject.Inject
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
@@ -44,7 +46,8 @@ data class BucketsDef(
     val print: (Duration) -> List<String>
 )
 
-class EscrowedListViewModel(
+@HiltViewModel
+class EscrowedListViewModel @Inject constructor(
     private val escrowManager: EscrowManager,
     val secureTime : SecureTime,
 ) : ViewModel() {
@@ -173,6 +176,7 @@ class EscrowedListViewModel(
                 }
         }
     }
+
 }
 
 

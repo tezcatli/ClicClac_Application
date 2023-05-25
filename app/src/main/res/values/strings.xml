@@ -22,7 +22,7 @@
         Ex: \"5 months\" for 5 months delay
     </string>
     <string name="number_of_shots_per_days_change_instruction">Type a number to set the maximum number of shots allowed per days</string>
-    <string name="config_screen_cassette_configuration">Cassette configuration</string>
+    <string name="config_screen_cassette_configuration">film configuration</string>
     <string name="config_screen_development_delay">Development delay: {0}</string>
     <string name="config_screen_shots_per_days">Shots per days: {0}</string>
     <string name="time_helpers_duration_day">

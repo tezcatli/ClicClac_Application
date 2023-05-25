@@ -10,15 +10,20 @@ import com.tezcatli.clicclac.helpers.TimeHelpers
 import com.tezcatli.clicclac.helpers.TimeHelpers.Companion.durationToString
 import com.tezcatli.clicclac.helpers.TimeHelpers.Companion.stringToDuration
 import com.tezcatli.clicclac.settings.SettingsRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 
-class ConfigCassetteViewModel(
+@HiltViewModel
+
+class ConfigCassetteViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
-    private val appContext: Context,
+    @ApplicationContext private val appContext: Context,
     ) : ViewModel() {
 
     var cassetteDevelopmentDelayChange by mutableStateOf("")

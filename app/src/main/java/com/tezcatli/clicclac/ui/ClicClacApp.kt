@@ -67,6 +67,8 @@ fun ClicClacApp(
     val snackbarHostState = remember { SnackbarHostState() }
 
 
+
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
@@ -174,9 +176,6 @@ fun ClicClacApp(
                 EscrowedList(
                     snackbarHostState = snackbarHostState,
                     onClickExpired = { navController.navigate(ROUTES.PHOTO.name) }
-                    //itemList = listAllState.itemList,
-                    //    modifier = modifier.padding(innerPadding),
-//                    onClick = viewModel::recoverPhoto
                 )
             }
             composable(route = ROUTES.CAMERA.name) {

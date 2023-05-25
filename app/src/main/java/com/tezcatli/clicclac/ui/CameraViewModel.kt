@@ -22,6 +22,8 @@ import com.tezcatli.clicclac.EscrowManager
 import com.tezcatli.clicclac.LocationManager
 import com.tezcatli.clicclac.PendingPhotoNotificationManager
 import com.tezcatli.clicclac.settings.SettingsRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -31,18 +33,22 @@ import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
+import javax.inject.Inject
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toKotlinDuration
 
-class CameraViewModel(
+
+@HiltViewModel
+
+class CameraViewModel @Inject constructor(
     private val executor: Executor,
     private val escrowManager: EscrowManager,
     private val settingsRepository: SettingsRepository,
     private val cameraManager: CameraManager,
     private val pendingPhotoNotificationManager: PendingPhotoNotificationManager,
     private val locationManager: LocationManager,
-    private val appContext: Context
+    @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
 

@@ -8,11 +8,13 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 
-
-class SettingsRepository(private val dataStore: DataStore<Preferences>) {
+@Singleton
+class SettingsRepository @Inject constructor(private val dataStore: DataStore<Preferences>) {
 
     fun getCassetteDevelopmentDelayF(): Flow<Long> {
         return dataStore.data.map { preferences ->
@@ -72,15 +74,6 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val SHOTS_IN_DAY = intPreferencesKey("SHOTS_IN_DAY")
         val LAST_SHOT_TIMESTAMP = stringPreferencesKey("LAST_SHOT_TIMESTAMP")
 
-
-        @Volatile
-        private var Instance: SettingsRepository? = null
-
-        fun getInstance(dataStore: DataStore<Preferences>): SettingsRepository {
-            return Instance ?: synchronized(this) {
-                return SettingsRepository(dataStore).also { Instance = it }
-            }
-        }
 
     }
 

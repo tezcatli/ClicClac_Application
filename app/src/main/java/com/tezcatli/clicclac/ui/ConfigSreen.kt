@@ -21,8 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.tezcatli.clicclac.AppViewModelProvider
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.tezcatli.clicclac.BuildConfig
 import com.tezcatli.clicclac.R
 import com.tezcatli.clicclac.helpers.TimeHelpers.Companion.durationToString
@@ -32,7 +31,7 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun ConfigScreen(
     modifier: Modifier = Modifier.fillMaxWidth(),
-    viewModel: ConfigViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    viewModel: ConfigViewModel = hiltViewModel(),
     onCassetteClick: () -> Unit = {}
 ) {
     val cassetteDevelopmentDelayState by viewModel.cassetteDevelopmentDelayState.collectAsState()
@@ -60,8 +59,8 @@ fun ConfigScreen2(
     Column {
         OutlinedCard(
             modifier = modifier
-            .fillMaxWidth()
-            .padding(all = 5.dp)
+                .fillMaxWidth()
+                .padding(all = 5.dp)
         ) {
             Row(
                 modifier = modifier

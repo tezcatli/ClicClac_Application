@@ -48,9 +48,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.tezcatli.clicclac.AppViewModelProvider
 import com.tezcatli.clicclac.Camera.CameraManager
 
 
@@ -65,7 +64,7 @@ fun flashModeIcon(flashMode: Int): ImageVector {
 
 @Composable
 fun CameraScreen(
-    viewModel: CameraViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    viewModel: CameraViewModel = hiltViewModel(),
     onConfig: () -> Unit = {}
 ) {
 

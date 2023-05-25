@@ -2,13 +2,7 @@ package com.tezcatli.clicclac
 
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
-import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.tezcatli.clicclac.ui.CameraViewModel
-import com.tezcatli.clicclac.ui.ConfigCassetteViewModel
-import com.tezcatli.clicclac.ui.ConfigViewModel
-import com.tezcatli.clicclac.ui.EscrowedListViewModel
-import com.tezcatli.clicclac.ui.PhotosViewModel
 
 
 /**
@@ -17,19 +11,25 @@ import com.tezcatli.clicclac.ui.PhotosViewModel
 object AppViewModelProvider {
     val Factory = viewModelFactory {
         // Initializer for ItemEditViewModel
+        /*
         initializer {
             EscrowedListViewModel(
                 clicClacApplication().container.escrowManager,
                 clicClacApplication().container.secureTime
             )
         }
+        */
 
+
+        /*
         initializer {
             ConfigViewModel(
                 clicClacApplication().container.settingsRepository
             )
         }
+        */
 
+/*
         initializer {
             CameraViewModel(
                 clicClacApplication().container.mainExecutor,
@@ -41,20 +41,23 @@ object AppViewModelProvider {
                 clicClacApplication().container.appContext
             )
         }
+        */
 
+        /*
         initializer {
             ConfigCassetteViewModel(
                 clicClacApplication().container.settingsRepository,
                 clicClacApplication().container.appContext
             )
-        }
-
+        }*/
+/*
         initializer {
             PhotosViewModel(
                 clicClacApplication().container.escrowManager,
                 clicClacApplication().container.contentResolver
             )
         }
+        */
 
     }
 }

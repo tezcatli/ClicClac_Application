@@ -19,16 +19,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.tezcatli.clicclac.AppViewModelProvider
 
 
 @Composable
 fun PhotosScreen(
     appViewModel: ClicClacAppViewModel,
     modifier: Modifier = Modifier,
-    viewModel: PhotosViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    viewModel: PhotosViewModel = hiltViewModel()
 ) {
     PhotosScreen2(
         appViewModel,

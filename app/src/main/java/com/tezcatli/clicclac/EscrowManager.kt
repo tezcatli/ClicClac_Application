@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.tezcatli.clicclac.crypto.CipherInputStream
 import com.tezcatli.clicclac.crypto.CipherOutputStream
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -16,6 +17,8 @@ import java.net.URL
 import java.time.ZonedDateTime
 import java.util.UUID
 import javax.crypto.SecretKey
+import javax.inject.Inject
+import javax.inject.Singleton
 
 
 /*
@@ -31,7 +34,8 @@ object EscrowManagerModule {
 
 }*/
 
-class EscrowManager(private val appContext: Context) {
+@Singleton
+class EscrowManager @Inject constructor(@ApplicationContext private val appContext: Context) {
     private var cipherEscrow: EscrowCipher = EscrowCipher(appContext)
 
     private var databaseEscrow = Room.databaseBuilder(
@@ -57,18 +61,6 @@ class EscrowManager(private val appContext: Context) {
             cipherEscrow.init(url)
             cleanUp()
         }
-    }
-
-    companion object {
-        @Volatile
-        private var Instance: EscrowManager? = null
-
-        fun getInstance(context: Context): EscrowManager {
-            return Instance ?: synchronized(this) {
-                return EscrowManager(context).also { Instance = it }
-            }
-        }
-
     }
 
     suspend fun add(dateTime: ZonedDateTime): String {

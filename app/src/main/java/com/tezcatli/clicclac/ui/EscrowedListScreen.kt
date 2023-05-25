@@ -30,8 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.tezcatli.clicclac.AppViewModelProvider
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.tezcatli.clicclac.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -54,7 +53,7 @@ data class Bucket(
 @Composable
 fun EscrowedList(
     modifier: Modifier = Modifier,
-    viewModel: EscrowedListViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    viewModel: EscrowedListViewModel = hiltViewModel(),
     snackbarHostState: SnackbarHostState,
     onClickExpired: () -> Unit = {}
 ) {

@@ -21,6 +21,7 @@ import androidx.work.WorkManager
 import androidx.work.Worker
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -29,6 +30,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.ZonedDateTime
+import javax.inject.Inject
+import javax.inject.Singleton
 
 
 class NotificationWorkerFactory(val pendingPhotoNotificationManager: PendingPhotoNotificationManager) :
@@ -70,29 +73,14 @@ class NotificationWorker(
 
 }
 
-class PendingPhotoNotificationManager(val appContext: Context, val escrowManager: EscrowManager) {
+@Singleton
+class PendingPhotoNotificationManager @Inject constructor(@ApplicationContext val appContext: Context,
+                                                          val escrowManager: EscrowManager) {
     var notification: NotificationCompat.Builder
 
 
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.IO + job)
-
-    companion object Keys {
-
-        @Volatile
-        private var Instance: PendingPhotoNotificationManager? = null
-
-
-        fun getInstance(
-            context: Context,
-            escrowManager: EscrowManager
-        ): PendingPhotoNotificationManager {
-            return Instance ?: synchronized(this) {
-                return PendingPhotoNotificationManager(context, escrowManager)
-            }
-        }
-
-    }
 
 
     fun scheduleNextNotification(scheduleOnly : Boolean = false) {
@@ -152,8 +140,6 @@ class PendingPhotoNotificationManager(val appContext: Context, val escrowManager
     }
 
     init {
-
-        Instance = this
         val name = appContext.getString(R.string.channel_name)
         val descriptionText = appContext.getString(R.string.channel_description)
         val importance = NotificationManager.IMPORTANCE_LOW

@@ -8,16 +8,13 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.LifecycleOwner
-import com.tezcatli.clicclac.settings.SettingsRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class CameraManager(val context : Context) {
+@Singleton
+class CameraManager @Inject constructor(@ApplicationContext val context : Context) {
 
     data class Lens(val zoom : Float, val direction : Int, val selector : CameraSelector)
     val lensList : MutableList<Lens> = mutableListOf()
@@ -83,16 +80,6 @@ class CameraManager(val context : Context) {
 
     fun takePhoto(process: (ImageCapture) -> Unit) {
         process(imageCapture!!)
-    }
-
-    companion object  {
-        @Volatile
-        private var Instance: CameraManager? = null
-        fun getInstance(context: Context): CameraManager {
-            return CameraManager.Instance ?: synchronized(this) {
-                return CameraManager(context).also { CameraManager.Instance = it }
-            }
-        }
     }
 
 }
