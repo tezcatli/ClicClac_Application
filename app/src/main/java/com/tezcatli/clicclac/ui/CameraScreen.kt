@@ -1,6 +1,10 @@
 package com.tezcatli.clicclac.ui
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.util.Log
+import android.view.Window
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.view.PreviewView
@@ -12,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -86,6 +91,12 @@ fun CameraScreen(
     )
 }
 
+private tailrec fun Context.findWindow(): Window? =
+    when (this) {
+        is Activity -> window
+        is ContextWrapper -> baseContext.findWindow()
+        else -> null
+    }
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
@@ -115,7 +126,6 @@ fun CameraScreen2(
 
     if (isInitialized) {
         val previewView = remember { PreviewView(context) }
-
         val scale = remember { Animatable(1f) }
 
         LaunchedEffect(cameraSelector) {
@@ -137,168 +147,169 @@ fun CameraScreen2(
             }
         }
 
-        // 3
-        if (isInitialized) {
-
-            Box(
-                contentAlignment = Alignment.BottomCenter, modifier = Modifier
+        //
+        Box(
+            contentAlignment = Alignment.BottomCenter,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
+            AndroidView(
+                { previewView }, modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black)
+                    .graphicsLayer(alpha = scale.value)
+            )
+            Column(
+                Modifier
+                    .displayCutoutPadding()
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
-                AndroidView(
-                    { previewView }, modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer(alpha = scale.value)
-                )
 
-                Column(
-                    Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.SpaceBetween
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    Column()
+                    {
+                        IconButton(onClick = {
+                            flashlightMenuExpanded = !flashlightMenuExpanded
+                        }) {
+                            Icon(
+                                imageVector = flashModeIcon(flashMode),
+                                tint = Color.White,
+                                contentDescription = "Localized description"
+                            )
+                        }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column()
-                        {
-                            IconButton(onClick = {
-                                flashlightMenuExpanded = !flashlightMenuExpanded
-                            }) {
-                                Icon(
-                                    imageVector = flashModeIcon(flashMode),
-                                    tint = Color.White,
-                                    contentDescription = "Localized description"
-                                )
-                            }
+                        if (flashlightMenuExpanded) {
 
-                            if (flashlightMenuExpanded) {
-
-                                listOf(
-                                    ImageCapture.FLASH_MODE_OFF,
-                                    ImageCapture.FLASH_MODE_AUTO,
-                                    ImageCapture.FLASH_MODE_ON
-                                ).forEach {
-                                    if (flashMode != it)
-
-                                        IconButton(onClick = {
-                                            updateFlashMode(it)
-                                            flashlightMenuExpanded = false
-                                        }) {
-                                            Icon(
-                                                imageVector = flashModeIcon(it),
-                                                tint = Color.White,
-                                                contentDescription = "Localized description"
-                                            )
-                                        }
+                            listOf(
+                                ImageCapture.FLASH_MODE_OFF,
+                                ImageCapture.FLASH_MODE_AUTO,
+                                ImageCapture.FLASH_MODE_ON
+                            ).forEach {
+                                if (flashMode != it) {
+                                    IconButton(onClick = {
+                                        updateFlashMode(it)
+                                        flashlightMenuExpanded = false
+                                    }) {
+                                        Icon(
+                                            imageVector = flashModeIcon(it),
+                                            tint = Color.White,
+                                            contentDescription = "Localized description"
+                                        )
+                                    }
                                 }
                             }
                         }
-                        Column(modifier = Modifier
-                            .padding(top = 10.dp)
-                            .padding(end = 10.dp)) {
-                            Box {
-                                Text(
-                                    shotsRemaining.toString(), fontWeight = FontWeight.Bold,
-                                    fontSize = 24.sp,
-                                    color = if (shotsRemaining > 0) Color.White else Color.Red,
-                                )
-                            }
-                        }
                     }
-
-
-                    Spacer(modifier = Modifier.weight(100.0f, true))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        listLens.forEach {
-                            Button(colors = if (it.selector == cameraSelector) {
-                                buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary
-                                )
-                            } else {
-                                buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.secondary,
-                                    contentColor = MaterialTheme.colorScheme.onSecondary
-                                )
-                            },
-                                onClick = { setLens(it.selector) }) {
-                                Text("%.2f".format(it.zoom))
-                            }
-                        }
-
-                    }
-                    Row(
+                    Column(
                         modifier = Modifier
-                            .padding(bottom = 20.dp)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                            .padding(top = 10.dp)
+                            .padding(end = 10.dp)
                     ) {
-                        IconButton(
-                            onClick = {
-                                Log.e("CLICCLAC", "Current direction " + lensDirection)
-
-                                if (lensDirection == CameraSelector.LENS_FACING_BACK) {
-                                    Log.e("CLICCLAC", "1 Current direction " + lensDirection)
-                                    updateLensDirection(CameraSelector.LENS_FACING_FRONT)
-                                } else {
-                                    Log.e("CLICCLAC", "2 Current direction " + lensDirection)
-                                    updateLensDirection(CameraSelector.LENS_FACING_BACK)
-                                }
-                            },
-                            content = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Cached,
-                                    contentDescription = "Font / Back",
-                                    tint = Color.White,
-                                    modifier = Modifier
-                                        .size(100.dp)
-                                        .padding(1.dp)
-                                )
-                            }
-                        )
-
-                        IconButton(
-                            onClick = {
-                                if (isShutterOpen && shotsRemaining > 0) {
-                                    onCapture()
-                                }
-                            },
-                            content = {
-                                Icon(
-                                    imageVector = Icons.Sharp.Camera,
-                                    contentDescription = "Take picture",
-                                    tint = if (shotsRemaining > 0)
-                                        Color.White else Color.Red,
-                                    modifier = Modifier
-                                        .size(100.dp)
-                                        .padding(1.dp)
-                                )
-                            }
-                        )
-
-
-                        IconButton(
-                            onClick = {
-                                Log.i("kilo", "CONFIG")
-                                onConfig()
-                            },
-                            content = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Menu,
-                                    contentDescription = "Config",
-                                    tint = Color.White,
-                                    modifier = Modifier
-                                        .size(100.dp)
-                                        .padding(1.dp)
-                                )
-                            }
-                        )
+                        Box {
+                            Text(
+                                shotsRemaining.toString(), fontWeight = FontWeight.Bold,
+                                fontSize = 24.sp,
+                                color = if (shotsRemaining > 0) Color.White else Color.Red,
+                            )
+                        }
                     }
+                }
+
+
+                Spacer(modifier = Modifier.weight(100.0f, true))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    listLens.forEach {
+                        Button(colors = if (it.selector == cameraSelector) {
+                            buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary,
+                                contentColor = MaterialTheme.colorScheme.onSecondary
+                            )
+                        },
+                            onClick = { setLens(it.selector) }) {
+                            Text("%.2f".format(it.zoom))
+                        }
+                    }
+
+                }
+                Row(
+                    modifier = Modifier
+                        .padding(bottom = 20.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    IconButton(
+                        onClick = {
+                            Log.e("CLICCLAC", "Current direction " + lensDirection)
+
+                            if (lensDirection == CameraSelector.LENS_FACING_BACK) {
+                                Log.e("CLICCLAC", "1 Current direction " + lensDirection)
+                                updateLensDirection(CameraSelector.LENS_FACING_FRONT)
+                            } else {
+                                Log.e("CLICCLAC", "2 Current direction " + lensDirection)
+                                updateLensDirection(CameraSelector.LENS_FACING_BACK)
+                            }
+                        },
+                        content = {
+                            Icon(
+                                imageVector = Icons.Outlined.Cached,
+                                contentDescription = "Font / Back",
+                                tint = Color.White,
+                                modifier = Modifier
+                                    .size(100.dp)
+                                    .padding(1.dp)
+                            )
+                        }
+                    )
+
+                    IconButton(
+                        onClick = {
+                            if (isShutterOpen && shotsRemaining > 0) {
+                                onCapture()
+                            }
+                        },
+                        content = {
+                            Icon(
+                                imageVector = Icons.Sharp.Camera,
+                                contentDescription = "Take picture",
+                                tint = if (shotsRemaining > 0)
+                                    Color.White else Color.Red,
+                                modifier = Modifier
+                                    .size(100.dp)
+                                    .padding(1.dp)
+                            )
+                        }
+                    )
+
+
+                    IconButton(
+                        onClick = {
+                            Log.i("kilo", "CONFIG")
+                            onConfig()
+                        },
+                        content = {
+                            Icon(
+                                imageVector = Icons.Outlined.Menu,
+                                contentDescription = "Config",
+                                tint = Color.White,
+                                modifier = Modifier
+                                    .size(100.dp)
+                                    .padding(1.dp)
+                            )
+                        }
+                    )
                 }
             }
         }

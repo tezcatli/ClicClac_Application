@@ -33,6 +33,7 @@ class CliClacApplication : Application(), Configuration.Provider {
 
         pendingPhotoNotificationManager.scheduleNextNotification()
 
+
     }
 
 

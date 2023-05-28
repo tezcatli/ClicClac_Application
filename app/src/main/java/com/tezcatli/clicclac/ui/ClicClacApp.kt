@@ -6,6 +6,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -24,6 +25,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +45,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navDeepLink
+import com.google.accompanist.systemuicontroller.SystemUiController
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.tezcatli.clicclac.R
 
 
@@ -63,13 +67,22 @@ fun ClicClacApp(
     viewModel: ClicClacAppViewModel = ClicClacAppViewModel()
 ) {
     var fullScreen by remember { mutableStateOf(false) }
-
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val systemUiController: SystemUiController = rememberSystemUiController()
+
+    DisposableEffect(systemUiController, fullScreen) {
+        systemUiController.isSystemBarsVisible = !fullScreen
+
+        onDispose {
+            systemUiController.isSystemBarsVisible = true
+        }
+    }
 
 
 
     Scaffold(
+        modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -166,7 +179,7 @@ fun ClicClacApp(
         NavHost(
             navController,
             startDestination = ROUTES.HOME.name,
-            Modifier.padding(innerPadding)
+            modifier = if (!fullScreen) {Modifier.padding(innerPadding)} else {Modifier}
         ) {
             composable(route = ROUTES.HOME.name,
                 deepLinks = listOf(navDeepLink {

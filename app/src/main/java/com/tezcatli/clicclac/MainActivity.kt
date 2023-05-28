@@ -4,9 +4,12 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,17 +19,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.tezcatli.clicclac.ui.ClicClacApp
 import com.tezcatli.clicclac.ui.theme.ClicClacTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -75,6 +83,7 @@ class MainActivity : ComponentActivity() {
         showRationale = permissions.showRationale
 
 
+
         lifecycleScope.launch {
             escrowManager.init(
                 URL("http://10.0.2.2:5000"),
@@ -84,10 +93,37 @@ class MainActivity : ComponentActivity() {
 
     }
 
+    @Composable
+    fun TransparentSystemBars() {
+        val systemUiController = rememberSystemUiController()
+        val useDarkIcons = !isSystemInDarkTheme()
+
+        DisposableEffect(systemUiController, useDarkIcons) {
+            systemUiController.setSystemBarsColor(
+                color = Color.Transparent,
+                darkIcons = useDarkIcons
+            )
+
+            onDispose {}
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun onReady() {
+
+       WindowCompat.setDecorFitsSystemWindows(window, false)
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes.layoutInDisplayCutoutMode =
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
 
 
         setContent {
+
+
+
             //(application as CliClacApplication).container.escrowManager = escrowManager
             ClicClacTheme {
                 if (!showRationale) {
@@ -134,7 +170,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
-                    }
+                   }
                 }
             }
         }

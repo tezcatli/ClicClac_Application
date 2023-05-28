@@ -18,8 +18,8 @@ android {
         applicationId "com.tezcatli.clicclac"
         minSdk 28
         targetSdk 33
-        versionCode 11
-        versionName "1.10"
+        versionCode 12
+        versionName "1.11"
 
         buildConfigField "boolean", "TEST", "false"
 
@@ -140,6 +140,10 @@ dependencies {
     // When using Kotlin.
     // When using Java.
 
+    implementation "com.google.accompanist:accompanist-systemuicontroller:0.30.1"
+    implementation "com.google.accompanist:accompanist-insets:0.30.1"
+    // If using insets-ui
+    implementation "com.google.accompanist:accompanist-insets-ui:0.30.1"
 
 }
 
