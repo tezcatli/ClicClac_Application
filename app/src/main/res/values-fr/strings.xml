@@ -76,5 +76,6 @@ A    </string>
     <string name="pending_photos_click_to_develop">Cliquez pour développer</string>
     <string name="pending_photos_system_clock_out_of_sync">Horloge système désynchronisée</string>
     <string name="pending_photos_unable_to_retrieve_time_from_internet">Impossible de récupérer l\'heure depuis internet</string>
+    <string name="permissions_understood">Compris</string>
 
 </resources>

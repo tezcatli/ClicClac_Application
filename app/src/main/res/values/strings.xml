@@ -65,5 +65,6 @@
     <string name="pending_photos_ready_to_be_developed">"{0} {0, plural, =1 {photo} other{photos}} ready to be developed     "</string>
     <string name="pending_photos_system_clock_out_of_sync">System clock out of sync</string>
     <string name="pending_photos_unable_to_retrieve_time_from_internet">Unable to retrieve time from internet</string>
+    <string name="permissions_understood">Understood</string>
 
 </resources>

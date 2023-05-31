@@ -165,7 +165,7 @@ class MainActivity : ComponentActivity() {
                                             showRationale = false
                                             requestPermissionLauncher.launch(permissions.permissionsToRequest.toTypedArray())
                                         }) {
-                                        Text(text = "Understood")
+                                        Text(text = getString(R.string.permissions_understood))
                                     }
                                 }
                             }

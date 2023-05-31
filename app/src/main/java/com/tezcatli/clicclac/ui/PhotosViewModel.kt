@@ -101,8 +101,8 @@ class PhotosViewModel @Inject constructor(
             Log.e("PHOTOSCREEN", "Exception caught:", e)
             return null
         } finally {
-            escrowManager.delete(uuid)
-            escrowManager.deleteFile(uuid)
+      //      escrowManager.delete(uuid)
+      //      escrowManager.deleteFile(uuid)
         }
         return (uri)
 
