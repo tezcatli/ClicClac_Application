@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
@@ -95,7 +95,7 @@ fun PhotosScreen2(
     modifier: Modifier = Modifier,
     imageUrlList: List<Uri> = listOf(),
 ) {
-    var imageUri by rememberSaveable { mutableStateOf<Uri>(Uri.EMPTY) }
+    var imageUriIndex by rememberSaveable {mutableStateOf(0) }
     var zoom by rememberSaveable { mutableStateOf(false) }
     appViewModel.fullScreen = zoom
 
@@ -124,11 +124,11 @@ fun PhotosScreen2(
 
             val contentResolver = LocalContext.current.contentResolver
 
-            val imgBitmap = remember(imageUri) {
+            val imgBitmap = remember(imageUriIndex) {
                 ImageDecoder.decodeBitmap(
                     ImageDecoder.createSource(
                         contentResolver,
-                        imageUri
+                        imageUrlList[imageUriIndex]
                     )
                 ).asImageBitmap()
             }
@@ -199,9 +199,7 @@ fun PhotosScreen2(
                             detectTransformGestures(
                                 onGesture = { centroid, pan, gestureZoom, _ ->
 
-                                    Log.e("CLICCLAC", "zoom = "+  gestureZoom +  " centroid = " + centroid.x  + " " + centroid.y
-                                            + " pan = " + pan.x + " " + pan.y
-                                        + " offset = " + offset.x + " " + offset.y)
+
                                     val oldScale = scale * scale0
                                     scale = (scale * gestureZoom).coerceIn(1.0f..100.0f)
                                     val scale1 = scale * scale0
@@ -213,10 +211,31 @@ fun PhotosScreen2(
 
                                     val d = sqrt((-pan.x + centroid.x - boxWidth / 2).pow(2) + (-pan.y + centroid.y - boxHeight / 2).pow(2)) * (scale1 - oldScale) / scale0
 
+                                    /*
+                                    Log.e("CLICCLAC", "zoom = "+  gestureZoom +  " centroid = " + (centroid.x - boxWidth/2) +  " " + (centroid.y - boxHeight/2)
+                                            + " offset = " + offset.x + " " + offset.y
+                                            + " pan = " + pan.x + " " + pan.y
+                                            + " imgWidth0 * scale1 / 2 = " + imgWidth0 * scale1 / 2)
+
+                                    Log.e("CLICCLAC", "offsetx = " + (- offset.x  + centroid.x - boxWidth/2  ) * (gestureZoom - 1))
+*/
+
+                                    Log.e("CLICCLAC", "index = " + imageUriIndex  + " , scale = " + scale)
+
                                     offset = Offset(
                                         when {
                                             (boxWidth - imgWidth0 * scale1) >= 0
-                                            -> 0f
+                                            ->  {
+                                                if (scale == 1.0f) {
+                                                    if (pan.x < 0 && imageUriIndex < (imageUrlList.size - 1)) {
+                                                   //     imageUriIndex ++
+                                                    }
+                                                    if (pan.x > 0 && imageUriIndex > 0) {
+                                                   //     imageUriIndex --
+                                                    }
+                                                }
+                                                0f
+                                            }
 
                                             (boxWidth - imgWidth0 * scale1) < 0 &&
                                                     offset.x + pan.x <= (boxWidth - imgWidth0 * scale1) / 2
@@ -226,8 +245,8 @@ fun PhotosScreen2(
                                                     offset.x + pan.x > -(boxWidth - imgWidth0 * scale1) / 2
                                             -> -(boxWidth - imgWidth0 * scale1) / 2
 
-                                            else -> offset.x + pan.x  - if (gestureZoom != 1.0f) ((offset.x  + pan.x +centroid.x - boxWidth / 2 ) * gestureZoom -
-                                                                        (offset.x + centroid.x - boxWidth / 2 )) / gestureZoom else 0f
+                                            else -> offset.x + pan.x  - ( -offset.x  + centroid.x - boxWidth/2) * (gestureZoom - 1)
+
                                         },
                                         when {
                                             (boxHeight - imgHeight0 * scale1) >= 0
@@ -241,8 +260,7 @@ fun PhotosScreen2(
                                                     offset.y + pan.y > -(boxHeight - imgHeight0 * scale1) / 2
                                             -> -(boxHeight - imgHeight0 * scale1) / 2
 
-                                            else -> offset.y + pan.y - if (gestureZoom != 1.0f) ((offset.y  +  pan.y + centroid.y - boxHeight / 2 )  * gestureZoom -
-                                                                        (offset.y + centroid.y - boxHeight / 2 )) / gestureZoom else 0f
+                                            else -> offset.y + pan.y - (-offset.y  + centroid.y - boxHeight/2 )  * (gestureZoom - 1)
                                         }
                                     )
                                 }
@@ -284,7 +302,7 @@ fun PhotosScreen2(
 
         ) {
 
-            items(imageUrlList) {
+            itemsIndexed(imageUrlList) {index,item ->
                 Row {
                     AsyncImage(
                         modifier = modifier
@@ -295,10 +313,10 @@ fun PhotosScreen2(
                                     "CLICCLAC",
                                     "TOGGLING FULL SCREEN : " + appViewModel.fullScreen.toString()
                                 )
-                                imageUri = it
+                                imageUriIndex = index
                                 zoom = true
                             },
-                        model = it,
+                        model = item,
                         contentScale = ContentScale.Crop,
                         contentDescription = null
                     )

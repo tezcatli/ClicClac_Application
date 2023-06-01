@@ -18,8 +18,8 @@ android {
         applicationId "com.tezcatli.clicclac"
         minSdk 28
         targetSdk 33
-        versionCode 12
-        versionName "1.11"
+        versionCode 13
+        versionName "1.12"
 
         buildConfigField "boolean", "TEST", "false"
 
